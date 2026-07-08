@@ -1,0 +1,184 @@
+/* ================================================================
+   StudioFlow — Teaching Mode Styles
+   ================================================================ */
+
+/* ── Preview area ───────────────────────────────────────────────── */
+.teaching-preview-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #020208;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Canvas fills the preview area */
+#teaching-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Webcam Bubble ──────────────────────────────────────────────── */
+.webcam-bubble {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: visible;
+  cursor: move;
+  z-index: 20;
+  user-select: none;
+  transition: box-shadow var(--t-med) var(--ease);
+}
+
+.webcam-bubble:hover {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 40px rgba(99, 102, 241, 0.4);
+}
+
+.webcam-bubble::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--grad-accent);
+  z-index: 0;
+  animation: bubbleBorderSpin 4s linear infinite;
+}
+
+@keyframes bubbleBorderSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.webcam-bubble::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--bg-app);
+  z-index: 1;
+}
+
+#webcam-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: 2;
+  background: #111;
+}
+
+/* Resize handle */
+.bubble-resize-handle {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  z-index: 10;
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.webcam-bubble:hover .bubble-resize-handle { opacity: 1; }
+
+/* Bubble control buttons */
+.bubble-controls {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.webcam-bubble:hover .bubble-controls {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.bubble-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-bright);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.bubble-btn:hover { background: var(--bg-card-hover); color: var(--text-1); }
+.bubble-btn.bubble-danger:hover { background: var(--danger-dim); color: var(--danger); }
+
+/* Mirrored webcam */
+.webcam-bubble.mirrored #webcam-video { transform: scaleX(-1); }
+
+/* Bubble position presets */
+.webcam-bubble[data-pos="top-left"]    { top: 24px; left: 24px; bottom: auto; right: auto; }
+.webcam-bubble[data-pos="top-right"]   { top: 24px; right: 24px; bottom: auto; left: auto; }
+.webcam-bubble[data-pos="bottom-left"] { bottom: 24px; left: 24px; top: auto; right: auto; }
+.webcam-bubble[data-pos="bottom-right"]{ bottom: 24px; right: 24px; top: auto; left: auto; }
+
+/* Recording state — bubble glows red */
+.webcam-bubble.recording::before {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  animation: bubbleBorderSpin 1.5s linear infinite;
+}
+
+/* ── Preview overlay info ───────────────────────────────────────── */
+.preview-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-3);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Chapter marker pills ───────────────────────────────────────── */
+.chapter-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 300px;
+}
+
+.chapter-pill {
+  padding: 2px 8px;
+  background: var(--accent-glow-2);
+  border: 1px solid var(--border-accent);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent-3);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}

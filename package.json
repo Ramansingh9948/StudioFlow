@@ -1,0 +1,16 @@
+{
+  "name": "studioflow",
+  "version": "1.0.0",
+  "description": "Personal macOS recording studio — Teaching & Storytelling modes",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging"
+  },
+  "keywords": ["recording", "studio", "macos", "electron"],
+  "author": "Personal",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.3.3"
+  }
+}

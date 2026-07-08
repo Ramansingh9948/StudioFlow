@@ -1,0 +1,3302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StudioFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #f8fafc; /* Slate 50 */
+      --bg2: #ffffff; /* Pure white */
+      --bg3: rgba(15, 23, 42, 0.03);
+      --bg3h: rgba(15, 23, 42, 0.06);
+      --acc: #4f46e5; /* Indigo 600 */
+      --acc-glow: rgba(79, 70, 229, 0.15);
+      --acc2: #7c3aed; /* Violet 600 */
+      --grad: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+      --grad-hover: linear-gradient(135deg, #3730a3 0%, #6d28d9 50%, #db2777 100%);
+      --ok: #10b981;
+      --okg: rgba(16, 185, 129, 0.08);
+      --err: #f43f5e;
+      --errg: rgba(244, 63, 94, 0.08);
+      --warn: #f59e0b;
+      --t1: #0f172a; /* Deep Slate (Slate 900) */
+      --t2: #475569; /* Medium Slate (Slate 600) */
+      --t3: #94a3b8; /* Cool Slate (Slate 400) */
+      --t4: #cbd5e1; /* Light Slate (Slate 300) */
+      --bdr: rgba(15, 23, 42, 0.06);
+      --bdr2: rgba(15, 23, 42, 0.12);
+      --bdracc: rgba(79, 70, 229, 0.2);
+      --glass: rgba(255, 255, 255, 0.85);
+      --glass-dark: rgba(255, 255, 255, 0.95);
+      --r: 12px;
+      --r2: 20px;
+      --sh: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --sha: 0 0 25px rgba(79, 70, 229, 0.12);
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      color: var(--t1);
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      outline: none;
+      background: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ── Main Layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      transition: background 0.4s var(--ease);
+      border: 1px solid var(--bdr);
+    }
+    
+    #app.widget-mode {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+
+    #app.widget-mode .layout {
+      margin-top: 0;
+    }
+
+    /* ── Custom Titlebar ── */
+    .titlebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.85);
+      border-bottom: 1px solid var(--bdr);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      padding: 0 20px;
+    }
+
+    #app.widget-mode .titlebar {
+      display: none !important;
+    }
+
+    .tb-drag {
+      -webkit-app-region: drag;
+      position: absolute;
+      inset: 0;
+    }
+
+    .tb-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+    }
+
+    .tb-logo span {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* macOS Window Controls */
+    .tb-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      -webkit-app-region: no-drag;
+    }
+
+    .wbtn {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .wbtn.close { background: #ff5f56; }
+    .wbtn.close:hover { background: #e0443e; }
+    .wbtn.close::after {
+      content: '×';
+      font-size: 10px;
+      color: #5c0000;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .wbtn.min { background: #ffbd2e; }
+    .wbtn.min:hover { background: #dfa220; }
+    .wbtn.min::after {
+      content: '–';
+      font-size: 10px;
+      color: #5c3e00;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.15s;
+      line-height: 0;
+      margin-top: -1px;
+    }
+
+    .tb-controls:hover .wbtn::after {
+      opacity: 1;
+    }
+
+    .rec-badge {
+      position: absolute;
+      right: 90px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--errg);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 20px;
+      padding: 5px 12px 5px 10px;
+      z-index: 10;
+      -webkit-app-region: no-drag;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.1);
+    }
+
+    .rec-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--err);
+      animation: blink 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.2; transform: scale(0.85); }
+    }
+
+    .rec-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--err);
+    }
+
+    /* ── Sidebar Navigation ── */
+    .sidebar {
+      width: 80px;
+      min-width: 80px;
+      background: var(--bg2);
+      border-right: 1px solid var(--bdr);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+      z-index: 100;
+    }
+
+    #app.widget-mode .sidebar {
+      display: none !important;
+    }
+
+    .sb-div {
+      width: 44px;
+      height: 1px;
+      background: var(--bdr);
+      margin: 12px 0;
+    }
+
+    .sb-bottom {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .nb {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 64px;
+      height: 64px;
+      border-radius: var(--r);
+      background: transparent;
+      color: var(--t2);
+      transition: all 0.3s var(--ease);
+      position: relative;
+    }
+
+    .nb:hover {
+      color: var(--t1);
+      background: var(--bg3);
+      transform: translateY(-2px);
+    }
+
+    .nb.on {
+      background: var(--accg2);
+      color: var(--acc);
+      border: 1px solid var(--bdracc);
+      box-shadow: var(--sha);
+    }
+
+    .nb.on::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 24px;
+      background: var(--grad);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .nb svg {
+      width: 22px;
+      height: 22px;
+      transition: transform 0.3s var(--ease);
+    }
+
+    .nb:hover svg {
+      transform: scale(1.08);
+    }
+
+    .nb span {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Content Paneling ── */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ── Main Controls Bar ── */
+    .cbar {
+      height: 80px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      background: var(--glass);
+      border-top: 1px solid var(--bdr);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+    }
+
+    #app.widget-mode .cbar {
+      display: none !important;
+    }
+
+    .cside {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+
+    .cside.r {
+      justify-content: flex-end;
+    }
+
+    .ccenter {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--t1);
+      letter-spacing: 0.05em;
+    }
+
+    .timer.rec {
+      color: var(--err);
+      text-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
+    }
+
+    /* ── Premium Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.25s var(--ease);
+      border: 1px solid var(--bdr2);
+      background: var(--bg2);
+      color: var(--t1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--bg3h);
+      border-color: rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn.pri {
+      background: var(--grad);
+      border: none;
+      color: #fff;
+    }
+
+    .btn.pri:hover:not(:disabled) {
+      background: var(--grad-hover);
+      box-shadow: var(--sha);
+    }
+
+    .btn.pri.rec {
+      background: var(--err);
+      box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+    }
+
+    .btn.danger:hover:not(:disabled) {
+      background: var(--errg);
+      border-color: var(--err);
+      color: var(--err);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--t2);
+      box-shadow: none;
+    }
+
+    .btn.ghost:hover:not(:disabled) {
+      background: var(--bg3);
+      color: var(--t1);
+      border-color: var(--bdr);
+    }
+
+    .btn-lg {
+      padding: 12px 26px;
+      font-size: 14px;
+      border-radius: var(--r);
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    .bcol {
+      flex-direction: column;
+      padding: 12px 18px;
+      min-width: 72px;
+      height: 62px;
+      gap: 4px;
+    }
+
+    .blbl {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--t2);
+    }
+
+    .btn.pri .blbl {
+      color: #fff;
+    }
+
+    /* Record dot */
+    .rdot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--err);
+      display: block;
+      transition: all 0.3s var(--bounce);
+    }
+
+    .btn.rec .rdot {
+      border-radius: 3px;
+      width: 10px;
+      height: 10px;
+      animation: rpulse 1.4s ease infinite;
+    }
+
+    @keyframes rpulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); }
+      50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+    }
+
+    /* ── Custom Toggle Switch ── */
+    .tog {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--t2);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tog input {
+      display: none;
+    }
+
+    .ttrack {
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      background: var(--t4);
+      position: relative;
+      transition: background 0.25s var(--ease);
+      border: 1px solid var(--bdr);
+    }
+
+    .ttrack::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.25s var(--bounce);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .tog input:checked + .ttrack {
+      background: var(--acc);
+      border-color: var(--acc);
+    }
+
+    .tog input:checked + .ttrack::after {
+      transform: translateX(16px);
+    }
+
+    /* ── Upper Source Bar ── */
+    .sbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    #app.widget-mode .sbar {
+      display: none !important;
+    }
+
+    .sbar-l, .sbar-r {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .blabel {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--t2);
+    }
+
+    /* ── Empty State ── */
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      padding: 40px;
+      color: var(--t2);
+      background: var(--bg2);
+    }
+
+    #app.widget-mode .empty {
+      display: none !important;
+    }
+
+    .eico {
+      font-size: 72px;
+      filter: drop-shadow(0 10px 15px rgba(79, 70, 229, 0.1));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .empty h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--t1);
+      letter-spacing: -0.03em;
+    }
+
+    .empty p {
+      font-size: 14px;
+      max-width: 320px;
+      line-height: 1.6;
+      color: var(--t2);
+    }
+
+    /* ════ TEACHING MODE ════════════════════════════════════════════ */
+    #t-preview {
+      flex: 1;
+      position: relative;
+      background: #f1f5f9; /* Soft grey preview background */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #app.widget-mode,
+    #app.widget-mode .layout,
+    #app.widget-mode .content,
+    #app.widget-mode .panel,
+    #app.widget-mode #t-preview {
+      background: transparent !important;
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    #t-canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    #app.widget-mode #t-canvas {
+      display: none !important;
+    }
+
+    /* Circular Webcam Bubble */
+    .bubble {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      overflow: visible;
+      cursor: move;
+      z-index: 20;
+      user-select: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .b-ring {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: var(--grad);
+      z-index: 0;
+      animation: spin 6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .b-ring.rrec {
+      background: linear-gradient(135deg, #f43f5e 0%, #ff8a00 50%, #f43f5e 100%);
+      animation: spin 2.5s linear infinite;
+    }
+
+    .b-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    #cam-vid {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      z-index: 2;
+      background: #eee;
+      border: 2px solid #fff;
+    }
+
+    .bubble.mir #cam-vid {
+      transform: scaleX(-1);
+    }
+
+    /* Floating Bubble Action Menu */
+    .btip {
+      position: absolute;
+      top: -38px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 6px;
+      z-index: 30;
+      background: var(--glass-dark);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bdr2);
+      border-radius: 30px;
+      padding: 4px 8px;
+      box-shadow: var(--sh);
+    }
+
+    .bubble:hover .btip {
+      display: flex;
+    }
+
+    .tbtn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 1px solid var(--bdr2);
+      color: var(--t1);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tbtn:hover {
+      background: var(--bg3h);
+      border-color: rgba(0,0,0,0.15);
+    }
+
+    .b-resize {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--acc);
+      z-index: 10;
+      cursor: se-resize;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .bubble:hover .b-resize {
+      opacity: 1;
+    }
+    .b-resize:hover {
+      transform: scale(1.2);
+    }
+
+    /* ════ FLOATING LOOM-STYLE BASELINE CONTROL BAR ════ */
+    #widget-bar {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 48px;
+      padding: 0 8px 0 18px;
+      border-radius: 30px;
+      background: var(--glass);
+      border: 1px solid var(--bdracc);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), var(--sha);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      transition: transform 0.2s;
+    }
+    
+    #widget-bar:hover {
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    #app.widget-mode #widget-bar {
+      display: flex;
+    }
+
+    .w-pill-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg2);
+      border: 1px solid var(--bdr2);
+      color: var(--t1);
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+      font-size: 13px;
+    }
+
+    .w-pill-btn:hover {
+      background: var(--bg3h);
+      border-color: rgba(0,0,0,0.15);
+      transform: scale(1.08);
+    }
+
+    .w-pill-btn.rec-btn {
+      background: var(--errg);
+      border-color: rgba(244, 63, 94, 0.2);
+      color: var(--err);
+    }
+
+    .w-pill-btn.rec-btn.on {
+      animation: rpulse 1.4s ease infinite;
+      background: var(--err);
+      color: #fff;
+      border: none;
+    }
+
+    .w-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--t1);
+    }
+
+    .w-timer.rec {
+      color: var(--err);
+    }
+
+    /* ════ STORYTELLING MODE ════════════════════════════════════════ */
+    .stbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    #app.widget-mode #panel-storytelling {
+      display: none !important;
+    }
+
+    .sttools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tbtn2 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border: 1px solid var(--bdr);
+      border-radius: var(--r);
+      background: var(--bg2);
+      color: var(--t2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tbtn2:hover {
+      background: var(--bg3h);
+      color: var(--t1);
+      border-color: rgba(0,0,0,0.15);
+    }
+
+    .tbtn2.on {
+      background: var(--accg2);
+      border-color: var(--bdracc);
+      color: var(--acc);
+      box-shadow: var(--sha);
+    }
+
+    .stlayout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .st-cam {
+      flex: 1;
+      position: relative;
+      background: #000; /* Camera viewport background remains black for contrast */
+      overflow: hidden;
+      border-right: 1px solid var(--bdr);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #st-vid {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #st-vid.blurbg { filter: blur(20px) scale(1.05); }
+    #st-vid.darkbg { filter: brightness(0.2); }
+
+    /* Drawing Overlay */
+    #ann {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 20;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* Draw toolbar */
+    #dbar {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--bdr2);
+      border-radius: 40px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 30;
+      box-shadow: var(--sh);
+    }
+
+    .dtool {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--bdr);
+      background: var(--bg2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all 0.2s;
+      color: var(--t2);
+    }
+
+    .dtool:hover, .dtool.on {
+      background: var(--accg2);
+      border-color: var(--bdracc);
+      color: var(--acc);
+    }
+
+    .cdot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s var(--bounce);
+    }
+
+    .cdot:hover, .cdot.on {
+      transform: scale(1.3);
+      border-color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .vsep {
+      width: 1px;
+      height: 24px;
+      background: var(--bdr);
+      flex-shrink: 0;
+    }
+
+    /* Story Recording Outline */
+    .st-cam::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      border: 4px solid transparent;
+      transition: border-color 0.3s;
+    }
+
+    .st-cam.rec::after {
+      border-color: var(--err);
+      animation: rbdr 2.5s ease infinite;
+    }
+
+    /* Teleprompter */
+    #tpov {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 42%;
+      z-index: 25;
+      background: linear-gradient(to top, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.85) 80%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #tptw {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      padding: 15px 50px 8px;
+    }
+
+    #tptxt {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.7;
+      color: var(--t1);
+      text-shadow: 0 1px 4px rgba(255,255,255,0.8);
+      will-change: transform;
+    }
+
+    .tpctrl {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border-top: 1px solid var(--bdr);
+    }
+
+    .tpbtn {
+      padding: 4px 14px;
+      border: 1px solid var(--bdr2);
+      border-radius: 20px;
+      background: var(--bg2);
+      color: var(--t1);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tpbtn:hover {
+      background: var(--bg3h);
+    }
+
+    /* Story Mode Sidebars */
+    .stside {
+      width: 360px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg2);
+      border-left: 1px solid var(--bdr);
+      overflow: hidden;
+    }
+
+    .stabs {
+      display: flex;
+      border-bottom: 1px solid var(--bdr);
+      background: var(--bg);
+    }
+
+    .stab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 10px;
+      border: none;
+      background: transparent;
+      color: var(--t2);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.25s;
+    }
+
+    .stab:hover {
+      color: var(--t1);
+    }
+
+    .stab.on {
+      color: var(--acc);
+      border-bottom-color: var(--acc);
+      background: var(--bg2);
+    }
+
+    .spanel {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      padding: 16px;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .spanel.on {
+      display: flex;
+    }
+
+    .pempty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      color: var(--t3);
+      padding: 20px;
+    }
+
+    .pemico {
+      font-size: 48px;
+      opacity: 0.7;
+    }
+
+    .pempty p {
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 200px;
+      color: var(--t2);
+    }
+
+    /* Video player panels */
+    #svid {
+      width: 100%;
+      flex: 1;
+      border-radius: var(--r);
+      background: #000;
+      object-fit: contain;
+      min-height: 0;
+      max-height: calc(100% - 52px);
+      box-shadow: var(--sh);
+      border: 1px solid var(--bdr);
+    }
+
+    .vicbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--bdr);
+      flex-shrink: 0;
+    }
+
+    .vprog {
+      flex: 1;
+      height: 5px;
+      background: var(--bg3);
+      border-radius: 3px;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .vpfill {
+      height: 100%;
+      background: var(--grad);
+      border-radius: 3px;
+      width: 0%;
+    }
+
+    .vtime {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--t2);
+      white-space: nowrap;
+    }
+
+    .icb {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--bdr2);
+      background: var(--bg2);
+      color: var(--t1);
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .icb:hover {
+      background: var(--accg2);
+      border-color: var(--bdracc);
+      color: var(--acc);
+      transform: scale(1.08);
+    }
+
+    /* Doc projector panels */
+    #docview {
+      flex: 1;
+      overflow: auto;
+      border-radius: var(--r);
+      background: #fff;
+      display: block;
+      padding: 10px;
+      min-height: 0;
+      box-shadow: var(--sh);
+      border: 1px solid var(--bdr);
+    }
+
+    #pdfcvs, #imgview {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .dcbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--bdr);
+      flex-shrink: 0;
+    }
+
+    .pginfo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--t1);
+      min-width: 60px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    /* ── GLOBAL COUNTDOWN ── */
+    #gcount {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+    }
+
+    #gcnum {
+      font-size: 140px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: cdpop 1s var(--bounce) forwards;
+      filter: drop-shadow(0 10px 20px rgba(79, 70, 229, 0.15));
+    }
+
+    /* ── Premium Modal design ── */
+    .mback {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.15);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--bdr2);
+      border-radius: var(--r2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 680px;
+      max-height: 82vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: min 0.35s var(--bounce);
+    }
+
+    .mhdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 26px;
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    .mhdr h2 {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .mcls {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--bdr2);
+      background: var(--bg2);
+      color: var(--t2);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .mcls:hover {
+      background: var(--errg);
+      color: var(--err);
+      border-color: var(--err);
+      transform: rotate(90deg);
+    }
+
+    .mbody {
+      padding: 26px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Source Grid Items */
+    .sgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      max-height: 52vh;
+      overflow-y: auto;
+    }
+
+    .sitem {
+      border: 2px solid var(--bdr);
+      border-radius: var(--r);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s var(--ease);
+      background: var(--bg2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .sitem:hover {
+      border-color: var(--acc);
+      box-shadow: var(--sha);
+      transform: translateY(-4px);
+    }
+
+    .sitem.sel {
+      border-color: var(--acc);
+      background: var(--accg2);
+      box-shadow: var(--sha);
+    }
+
+    .sthumb {
+      width: 100%;
+      aspect-ratio: 16/10;
+      object-fit: cover;
+      background: #f1f5f9;
+      display: block;
+      transition: transform 0.3s;
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    .sitem:hover .sthumb {
+      transform: scale(1.03);
+    }
+
+    .sname {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--t1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* BG choice grid */
+    .bggrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .bgopt {
+      border: 2px solid var(--bdr);
+      border-radius: var(--r);
+      overflow: hidden;
+      cursor: pointer;
+      background: transparent;
+      padding: 0;
+      transition: all 0.2s;
+    }
+
+    .bgopt:hover, .bgopt.on {
+      border-color: var(--acc);
+      transform: translateY(-2px);
+    }
+
+    .bgprev {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t2);
+    }
+
+    .bg-n { background: var(--bg); border: 1px solid var(--bdr); }
+    .bg-b { background: linear-gradient(135deg, rgba(79,70,229,0.1) 0%, rgba(236,72,153,0.1) 100%); }
+    .bg-d { background: #1e293b; color: #fff !important; }
+
+    /* Settings section */
+    .sgrd {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .ssect {
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      border-radius: var(--r2);
+      padding: 22px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+
+    .ssect h3 {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--acc);
+      margin-bottom: 18px;
+    }
+
+    .sitem2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    .sitem2:last-child {
+      border-bottom: none;
+    }
+
+    .sitem2 label {
+      font-size: 13px;
+      color: var(--t1);
+      font-weight: 600;
+    }
+
+    .sselect {
+      padding: 8px 14px;
+      background: var(--bg);
+      border: 1px solid var(--bdr2);
+      border-radius: 8px;
+      color: var(--t1);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      font-weight: 600;
+      transition: border 0.2s;
+    }
+    .sselect:focus {
+      border-color: var(--acc);
+    }
+
+    .spath {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--acc);
+      background: var(--accg2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--bdracc);
+    }
+
+    /* Library cards */
+    .lgrd {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .lcard {
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      border-radius: var(--r);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s var(--ease);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+
+    .lcard:hover {
+      border-color: var(--bdracc);
+      transform: translateY(-4px);
+      box-shadow: var(--sh);
+    }
+
+    .lthumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--t3);
+      border-bottom: 1px solid var(--bdr);
+      transition: background 0.2s;
+    }
+    .lcard:hover .lthumb {
+      background: #e2e8f0;
+    }
+
+    .linfo {
+      padding: 14px;
+    }
+
+    .lname {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lmeta {
+      font-size: 11px;
+      color: var(--t2);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .lacts {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .lbtn {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--bdr2);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--t1);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .lbtn:hover {
+      background: var(--bg3h);
+      border-color: rgba(0,0,0,0.15);
+    }
+
+    /* Teleprompter Edit textarea */
+    .tpta {
+      width: 100%;
+      height: 200px;
+      background: var(--bg);
+      border: 1px solid var(--bdr2);
+      border-radius: var(--r);
+      color: var(--t1);
+      font-size: 15px;
+      line-height: 1.7;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border 0.25s;
+    }
+
+    .tpta:focus {
+      border-color: var(--acc);
+    }
+
+    .macts {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* Range slider inputs */
+    .sl {
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--t4);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .sl::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--acc);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--acc);
+      transition: transform 0.15s;
+    }
+    .sl::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Chapter markers */
+    .cpills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: 320px;
+    }
+
+    .cpill {
+      padding: 3px 10px;
+      background: var(--accg2);
+      border: 1px solid var(--bdracc);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--acc);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Music control rows */
+    .mmc {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mname {
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--bg);
+      padding: 12px 16px;
+      border-radius: var(--r);
+      border: 1px solid var(--bdr);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Toast overlay */
+    #toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass-dark);
+      border: 1px solid var(--bdr2);
+      border-radius: 40px;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 3000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      animation: tin 0.3s var(--bounce);
+      max-width: 400px;
+      backdrop-filter: blur(16px);
+    }
+
+    .tmsg {
+      font-size: 13px;
+      color: var(--t1);
+      font-weight: 600;
+    }
+
+    /* Clean Panel headers */
+    .phdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 30px 14px;
+      border-bottom: 1px solid var(--bdr);
+      flex-shrink: 0;
+    }
+
+    .ptitle {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .ltabs {
+      display: flex;
+      gap: 6px;
+      padding: 14px 30px;
+      border-bottom: 1px solid var(--bdr);
+      flex-shrink: 0;
+    }
+
+    .ltb {
+      padding: 8px 16px;
+      border: 1px solid var(--bdr);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--t2);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ltb:hover {
+      background: var(--bg3h);
+      color: var(--t1);
+    }
+
+    .ltb.on {
+      background: var(--accg2);
+      border-color: var(--bdracc);
+      color: var(--acc);
+      box-shadow: var(--sha);
+    }
+
+    /* YouTube Live Streaming Styles */
+    .btn.live {
+      background: linear-gradient(135deg, #f43f5e 0%, #ff5e3a 100%);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.2);
+    }
+    .btn.live:hover:not(:disabled) {
+      background: linear-gradient(135deg, #e11d48 0%, #f97316 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(244, 63, 94, 0.35);
+    }
+    .btn.live.streaming {
+      background: #2563eb;
+      animation: pulse-stream 1.5s infinite;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+    .btn.live.streaming:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+    @keyframes pulse-stream {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.97); opacity: 0.9; }
+    }
+    @keyframes blink-blue {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.2; transform: scale(0.85); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLEBAR -->
+  <div class="titlebar">
+    <div class="tb-drag"></div>
+    <div class="tb-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="url(#lg)"/>
+        <circle cx="12" cy="12" r="4" fill="white" opacity=".9"/>
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="24" y2="24">
+          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
+        </linearGradient></defs>
+      </svg>
+      <span>StudioFlow</span>
+    </div>
+    
+    <div style="position: absolute; right: 90px; display: flex; gap: 8px; z-index: 10; -webkit-app-region: no-drag;">
+      <div id="rec-badge" class="rec-badge hidden" style="position: static;">
+        <span class="rec-dot"></span>
+        <span class="rec-time" id="rec-time">00:00</span>
+      </div>
+      <div id="live-badge" class="rec-badge hidden" style="position: static; background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.35); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);">
+        <span class="rec-dot" style="background: #2563eb; animation: blink-blue 1.2s infinite;"></span>
+        <span class="rec-time" id="live-time" style="color: #2563eb;">LIVE</span>
+      </div>
+    </div>
+
+    <div class="tb-controls">
+      <button class="wbtn min" id="app-min" title="Minimize"></button>
+      <button class="wbtn close" id="app-close" title="Close"></button>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <button class="nb on" id="nb-teaching" data-mode="teaching">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <path d="M8 21h8M12 17v4"/>
+          <circle cx="17" cy="7" r="2.5" fill="currentColor" stroke="none" opacity=".8"/>
+        </svg>
+        <span>Teaching</span>
+      </button>
+      <button class="nb" id="nb-story" data-mode="storytelling">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        <span>Story</span>
+      </button>
+      <div class="sb-div"></div>
+      <div class="sb-bottom">
+        <button class="nb" id="nb-library" data-mode="library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h7"/></svg>
+          <span>Library</span>
+        </button>
+        <button class="nb" id="nb-settings" data-mode="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- ══ TEACHING MODE ══ -->
+      <div class="panel" id="panel-teaching">
+        <!-- Source bar -->
+        <div class="sbar">
+          <div class="sbar-l">
+            <span class="blabel">Screen Source</span>
+            <button class="btn" id="t-src-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+              <span id="t-src-name">Select Source…</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+          <div class="sbar-r">
+            <button class="btn pri" id="t-widget-tog">Loom Mode (Float)</button>
+            <label class="tog"><input type="checkbox" id="cam-tog" checked/><span class="ttrack"></span>Webcam</label>
+            <label class="tog"><input type="checkbox" id="mic-tog" checked/><span class="ttrack"></span>Mic</label>
+          </div>
+        </div>
+        <!-- Preview -->
+        <div id="t-preview">
+          <div class="empty" id="t-empty">
+            <div class="eico">🖥️</div>
+            <h2>Select a source to begin</h2>
+            <p>Click "Select Source" above, then choose your screen or a window</p>
+            <button class="btn btn-lg pri" id="t-cta">Choose Screen Source</button>
+          </div>
+          <canvas id="t-canvas" class="hidden"></canvas>
+          <!-- Webcam bubble -->
+          <div class="bubble" id="bubble">
+            <div class="b-ring" id="b-ring"></div>
+            <div class="b-bg"></div>
+            <video id="cam-vid" autoplay muted playsinline></video>
+            <div class="btip">
+              <button class="tbtn" id="mir-btn">⇆</button>
+              <button class="tbtn" id="hid-btn">✕</button>
+            </div>
+            <div class="b-resize" id="b-resize"></div>
+          </div>
+        </div>
+        <!-- Controls -->
+        <div class="cbar">
+          <div class="cside">
+            <span class="timer" id="t-timer">00:00:00</span>
+            <div class="cpills" id="t-marks"></div>
+          </div>
+          <div class="ccenter">
+            <button class="btn bcol pri" id="t-rec"><span class="rdot"></span><span class="blbl">Record</span></button>
+            <button class="btn bcol live" id="t-live"><span class="live-ico">📡</span><span class="blbl">Go Live</span></button>
+            <button class="btn bcol" id="t-pause" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span class="blbl">Pause</span></button>
+            <button class="btn bcol danger" id="t-stop" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg><span class="blbl">Stop</span></button>
+          </div>
+          <div class="cside r">
+            <button class="btn ghost bcol" id="t-cd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="blbl" id="t-cd-lbl">3s</span></button>
+            <button class="btn ghost bcol" id="t-mark" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg><span class="blbl">Marker</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOOM WIDGET CONTROL BAR -->
+      <div id="widget-bar">
+        <button class="w-pill-btn rec-btn" id="w-rec" title="Record/Stop">⏺</button>
+        <button class="w-pill-btn" id="w-pause" title="Pause" disabled>⏸</button>
+        <span class="w-timer" id="w-timer">00:00</span>
+        <div class="vsep" style="height:18px; margin:0 4px;"></div>
+        <button class="w-pill-btn" id="w-mic" title="Toggle Mic">🎙️</button>
+        <button class="w-pill-btn" id="w-exit" title="Exit Float Mode" style="border-color:rgba(244,63,94,0.3); color:var(--err)">✕</button>
+      </div>
+
+      <!-- ══ STORYTELLING MODE ══ -->
+      <div class="panel hidden" id="panel-storytelling">
+        <!-- Toolbar -->
+        <div class="stbar">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="blabel">Storytelling Studio</span>
+            <div class="vsep" style="height:16px;"></div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--t2)">Split Layout</span>
+              <input type="range" class="sl" id="story-split" min="200" max="800" value="360" style="width:100px"/>
+            </div>
+          </div>
+          <div class="sttools">
+            <button class="tbtn2" id="s-draw">✏️ Draw</button>
+            <button class="tbtn2" id="s-tp">📝 Prompter</button>
+            <button class="tbtn2" id="s-bg">🌅 Background</button>
+            <button class="tbtn2" id="s-mus">🎵 Music</button>
+          </div>
+        </div>
+        <!-- Layout -->
+        <div class="stlayout">
+          <!-- Camera -->
+          <div class="st-cam" id="st-cam">
+            <video id="st-vid" autoplay muted playsinline></video>
+            <canvas id="ann" class="hidden"></canvas>
+            <!-- Draw toolbar -->
+            <div id="dbar" class="hidden">
+              <button class="dtool on" data-tool="pen">✏️</button>
+              <button class="dtool" data-tool="arrow">→</button>
+              <button class="dtool" data-tool="rect">▭</button>
+              <button class="dtool" data-tool="circle">○</button>
+              <div class="vsep"></div>
+              <button class="cdot on" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="cdot" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="cdot" data-color="#10b981" style="background:#10b981"></button>
+              <button class="cdot" data-color="#6366f1" style="background:#6366f1"></button>
+              <button class="cdot" data-color="#ffffff" style="background:#fff"></button>
+              <div class="vsep"></div>
+              <input type="range" class="sl" id="draw-sz" min="2" max="22" value="4" style="width:70px"/>
+              <button class="dtool" id="draw-clr">🗑</button>
+              <button class="dtool" id="draw-x">✕</button>
+            </div>
+            <!-- Teleprompter -->
+            <div id="tpov" class="hidden">
+              <div id="tptw"><div id="tptxt">Click Edit to write your script…</div></div>
+              <div class="tpctrl">
+                <button class="tpbtn" id="tp-play">▶</button>
+                <input type="range" class="sl" id="tp-spd" min="1" max="12" value="3" style="width:80px"/>
+                <span style="font-size:11px;color:rgba(15,23,42,.5)">Speed</span>
+                <button class="tpbtn" id="tp-edit">Edit</button>
+                <button class="tpbtn" id="tp-x">✕</button>
+              </div>
+            </div>
+          </div>
+          <!-- Side panel -->
+          <div class="stside" id="st-side-panel">
+            <div class="stabs">
+              <button class="stab on" data-sp="video">▶ Video Player</button>
+              <button class="stab" data-sp="doc">📄 Documents</button>
+            </div>
+            <!-- Video sub-panel -->
+            <div class="spanel on" id="sp-video">
+              <div class="pempty" id="v-mt"><div class="pemico">🎬</div><p>Load a video to play alongside your recording</p><button class="btn pri btn-sm" id="load-vid">Load Video</button></div>
+              <video id="svid" class="hidden" style="display:none"></video>
+              <div class="vicbar hidden" id="vic" style="display:none">
+                <button class="icb" id="v-play">▶</button>
+                <div class="vprog" id="vprog"><div class="vpfill" id="vpfill"></div></div>
+                <span class="vtime" id="vtime">0:00</span>
+                <button class="icb" id="v-ch">⏏</button>
+              </div>
+            </div>
+            <!-- Doc sub-panel -->
+            <div class="spanel" id="sp-doc">
+              <div class="pempty" id="d-mt"><div class="pemico">📄</div><p>Load a PDF or image to project during your story</p><button class="btn pri btn-sm" id="load-doc">Load Document</button></div>
+              <div id="docview" class="hidden" style="display:none"><canvas id="pdfcvs"></canvas><img id="imgview" class="hidden" alt=""/></div>
+              <div class="dcbar hidden" id="dcc" style="display:none">
+                <button class="icb" id="doc-prv">‹</button>
+                <span class="pginfo" id="pg-info">1 / 1</span>
+                <button class="icb" id="doc-nxt">›</button>
+                <button class="icb" id="doc-ch">⏏</button>
+                <div class="vsep" style="height:18px; margin:0 4px;"></div>
+                <button class="icb" id="doc-zout" title="Zoom Out" style="font-size:14px; font-weight:bold;">−</button>
+                <span class="pginfo" id="doc-zoom-lbl" style="min-width:44px;">100%</span>
+                <button class="icb" id="doc-zin" title="Zoom In" style="font-size:14px; font-weight:bold;">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Controls -->
+        <div class="cbar">
+          <div class="cside">
+            <span class="timer" id="s-timer">00:00:00</span>
+            <div class="cpills" id="s-marks"></div>
+          </div>
+          <div class="ccenter">
+            <button class="btn bcol pri" id="s-rec"><span class="rdot"></span><span class="blbl">Record</span></button>
+            <button class="btn bcol live" id="s-live"><span class="live-ico">📡</span><span class="blbl">Go Live</span></button>
+            <button class="btn bcol" id="s-pause" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span class="blbl">Pause</span></button>
+            <button class="btn bcol danger" id="s-stop" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg><span class="blbl">Stop</span></button>
+          </div>
+          <div class="cside r">
+            <button class="btn ghost bcol" id="s-cd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="blbl" id="s-cd-lbl">3s</span></button>
+            <button class="btn ghost bcol" id="s-mark" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg><span class="blbl">Marker</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ LIBRARY ══ -->
+      <div class="panel hidden" id="panel-library">
+        <div class="phdr"><span class="ptitle">Recordings</span><button class="btn ghost btn-sm" id="open-finder">📁 Open in Finder</button></div>
+        <div class="ltabs"><button class="ltb on" data-lt="teaching">🎓 Teaching</button><button class="ltb" data-lt="stories">📖 Stories</button></div>
+        <div class="lgrd" id="lgrd"><div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px;color:var(--t3);text-align:center"><span style="font-size:48px">🎬</span><p>No recordings yet. Start recording!</p></div></div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
+      <div class="panel hidden" id="panel-settings">
+        <div class="phdr"><span class="ptitle">Settings</span></div>
+        <div class="sgrd">
+          <div class="ssect">
+            <h3>Recording</h3>
+            <div class="sitem2"><label>Video Quality</label><select class="sselect" id="sq"><option value="high">High (1080p)</option><option value="medium" selected>Medium (720p)</option><option value="low">Low (480p)</option></select></div>
+            <div class="sitem2"><label>Frame Rate</label><select class="sselect" id="sfps"><option value="60">60 fps</option><option value="30" selected>30 fps</option><option value="24">24 fps</option></select></div>
+            <div class="sitem2"><label>Countdown</label><select class="sselect" id="scd"><option value="3" selected>3 seconds</option><option value="5">5 seconds</option><option value="0">None</option></select></div>
+            <div class="sitem2"><label>Face Filter (Beauty Mode)</label><select class="sselect" id="sf-filter"><option value="none" selected>Normal</option><option value="brighten">Brighten (Gora Mode)</option><option value="smooth">Smooth Skin (Blemish Cover)</option><option value="glow">Studio Glow</option></select></div>
+          </div>
+          <div class="ssect">
+            <h3>Output</h3>
+            <div class="sitem2"><label>Save Location</label><span class="spath" id="save-path">~/Movies/StudioFlow/</span></div>
+          </div>
+          <div class="ssect">
+            <h3>YouTube Live Streaming</h3>
+            <div class="sitem2">
+              <label>Stream Key</label>
+              <div style="display:flex; gap:8px; align-items:center; flex:1; max-width:240px; justify-content:flex-end;">
+                <input type="password" class="sselect" id="yt-key" placeholder="Stream Key..." style="width:140px; cursor:text; padding:8px 10px; font-family:'JetBrains Mono',monospace;"/>
+                <button class="btn btn-sm" id="yt-key-show" style="padding:8px 12px; font-size:11px; min-width:54px;">Show</button>
+              </div>
+            </div>
+            <div class="sitem2">
+              <label>Server URL</label>
+              <input type="text" class="sselect" id="yt-url" value="rtmp://a.rtmp.youtube.com/live2/" style="width:240px; cursor:text; padding:8px 10px; font-family:'JetBrains Mono',monospace;"/>
+            </div>
+            <div class="sitem2">
+              <label>Auto-Record</label>
+              <label class="tog"><input type="checkbox" id="yt-autorecord" checked/><span class="ttrack"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- GLOBAL COUNTDOWN -->
+<div id="gcount" class="hidden">
+  <div id="gcnum">3</div>
+</div>
+
+<!-- MODALS -->
+<div class="mback hidden" id="m-src">
+  <div class="modal">
+    <div class="mhdr"><h2>Choose Screen Source</h2><button class="mcls" data-close="m-src">×</button></div>
+    <div class="mbody">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:14px">Select a screen or window to capture</p>
+      <div class="sgrid" id="sgrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mback hidden" id="m-tp">
+  <div class="modal">
+    <div class="mhdr"><h2>Teleprompter Script</h2><button class="mcls" data-close="m-tp">×</button></div>
+    <div class="mbody">
+      <textarea class="tpta" id="tp-input" placeholder="Write your script here. It will scroll automatically…"></textarea>
+      <div class="macts"><button class="btn pri" id="tp-save">Save Script</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="mback hidden" id="m-bg">
+  <div class="modal" style="max-width:420px">
+    <div class="mhdr"><h2>Virtual Background</h2><button class="mcls" data-close="m-bg">×</button></div>
+    <div class="mbody">
+      <div class="bggrid">
+        <button class="bgopt on" data-bg="none"><div class="bgprev bg-n">None</div></button>
+        <button class="bgopt" data-bg="blur"><div class="bgprev bg-b">Blur</div></button>
+        <button class="bgopt" data-bg="dark"><div class="bgprev bg-d">Dark</div></button>
+      </div>
+      <div class="macts"><button class="btn pri" id="apply-bg">Apply</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="mback hidden" id="m-music">
+  <div class="modal" style="max-width:440px">
+    <div class="mhdr"><h2>Background Music</h2><button class="mcls" data-close="m-music">×</button></div>
+    <div class="mbody">
+      <div id="m-mt"><div style="text-align:center;padding:20px;color:var(--t2)">
+        <div style="font-size:40px;margin-bottom:10px">🎵</div>
+        <p style="font-size:13px;margin-bottom:12px">Load an audio file for background music</p>
+        <button class="btn pri btn-sm" id="load-mus">Load Audio File</button>
+      </div></div>
+      <div id="m-ok" class="hidden mmc">
+        <div class="mname" id="mus-name">No file</div>
+        <audio id="bgaud" loop></audio>
+        <div class="mrow">
+          <button class="icb" id="mus-play">▶</button>
+          <button class="icb" id="mus-stop">■</button>
+          <input type="range" class="sl" id="mus-vol" min="0" max="100" value="30" style="width:90px"/>
+          <span style="font-size:12px;color:var(--t2)">Vol</span>
+        </div>
+        <button class="btn ghost btn-sm" id="mus-ch" style="align-self:flex-start;margin-top:6px">Change File</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"><span id="t-ico"></span><span class="tmsg" id="t-msg"></span></div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+const G = {
+  mode:'teaching', rec:false, paused:false, widgetMode:false,
+  secs:0, tRef:null, chapters:[],
+  q:'medium', fps:30, cd:3, camFilter:'none', docZoom:1.0,
+  ytKey:'', ytUrl:'rtmp://a.rtmp.youtube.com/live2/', ytAutoRecord:true, streaming:false
+};
+
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
+
+function fmt(s){ const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':'); }
+function fmts(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+
+let _toTO;
+function toast(ico,msg){
+  $('t-ico').textContent=ico; $('t-msg').textContent=msg;
+  $('toast').classList.remove('hidden');
+  clearTimeout(_toTO); _toTO=setTimeout(()=>$('toast').classList.add('hidden'),3500);
+}
+
+function openM(id){$(id).classList.remove('hidden')}
+function closeM(id){$(id).classList.add('hidden')}
+
+$$('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
+$$('.mback').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.add('hidden')}));
+
+function startT(id){
+  G.secs=0; $(id).textContent=fmt(0);
+  if($('w-timer')) $('w-timer').textContent='00:00';
+  G.tRef=setInterval(()=>{
+    if(!G.paused){
+      G.secs++;
+      $(id).textContent=fmt(G.secs);
+      $('rec-time').textContent=fmt(G.secs).slice(3); // mm:ss
+      if($('w-timer')) $('w-timer').textContent=fmt(G.secs).slice(3);
+    }
+  },1000);
+}
+function stopT(id){
+  clearInterval(G.tRef); G.tRef=null;
+  $(id).textContent=fmt(0);
+  if($('w-timer')) $('w-timer').textContent='00:00';
+}
+
+function addMark(mId){
+  if(!G.rec) return;
+  const t=G.secs; G.chapters.push(t);
+  const p=document.createElement('span'); p.className='cpill'; p.textContent=fmt(t);
+  $(mId).appendChild(p); toast('📌',`Marker at ${fmt(t)}`);
+}
+
+async function runCD(secs){
+  if(secs<=0) return;
+  const ov=$('gcount'), nu=$('gcnum');
+  ov.classList.remove('hidden');
+  for(let i=secs;i>0;i--){
+    nu.textContent=i;
+    nu.style.animation='none'; void nu.offsetWidth; nu.style.animation='cdpop 1s var(--bounce) forwards';
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  ov.classList.add('hidden');
+}
+
+let audioCtx = null;
+async function getEnhancedAudioTrack(stream) {
+  const audioTracks = stream.getAudioTracks();
+  if (!audioTracks.length) return null;
+
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
+  }
+
+  const source = audioCtx.createMediaStreamSource(new MediaStream([audioTracks[0]]));
+  const destination = audioCtx.createMediaStreamDestination();
+
+  const hpFilter = audioCtx.createBiquadFilter();
+  hpFilter.type = 'highpass';
+  hpFilter.frequency.value = 85;
+
+  const lpFilter = audioCtx.createBiquadFilter();
+  lpFilter.type = 'lowpass';
+  lpFilter.frequency.value = 8000;
+
+  // 1. Vocal Bass Boost (peaking filter to add warmth/bass to voice around 150Hz)
+  const bassBoost = audioCtx.createBiquadFilter();
+  bassBoost.type = 'peaking';
+  bassBoost.frequency.value = 150;
+  bassBoost.Q.value = 1.0;
+  bassBoost.gain.value = 3.5; // +3.5dB boost
+
+  // 2. Vocal Presence Boost (peaking filter to boost details/clarity around 3kHz)
+  const presenceBoost = audioCtx.createBiquadFilter();
+  presenceBoost.type = 'peaking';
+  presenceBoost.frequency.value = 3000;
+  presenceBoost.Q.value = 1.2;
+  presenceBoost.gain.value = 2.5; // +2.5dB boost
+
+  const compressor = audioCtx.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-36, audioCtx.currentTime);
+  compressor.knee.setValueAtTime(10, audioCtx.currentTime);
+  compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
+  compressor.attack.setValueAtTime(0.01, audioCtx.currentTime);
+  compressor.release.setValueAtTime(0.15, audioCtx.currentTime);
+
+  // Connect the full vocal processor chain
+  source.connect(hpFilter);
+  hpFilter.connect(lpFilter);
+  lpFilter.connect(bassBoost);
+  bassBoost.connect(presenceBoost);
+  presenceBoost.connect(compressor);
+  compressor.connect(destination);
+
+  return destination.stream.getAudioTracks()[0];
+}
+
+// Prefer VP8 — hardware-accelerated on Apple Silicon via VideoToolbox.
+// VP9 is a pure software encoder and is the primary cause of CPU heat.
+function getMime(){
+  return ['video/webm;codecs=vp8,opus','video/webm;codecs=vp9,opus','video/webm']
+    .find(t=>MediaRecorder.isTypeSupported(t))||'video/webm';
+}
+// Slightly lower bitrates — still excellent quality, lower power draw.
+function getBR(){ return {high:5e6,medium:3e6,low:1e6}[G.q]||3e6; }
+
+async function doSave(chunks,mime,mode){
+  const blob=new Blob(chunks,{type:mime});
+  const buf=new Uint8Array(await blob.arrayBuffer());
+  const ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  const fn=`${mode==='teaching'?'teach':'story'}_${ts}.webm`;
+  try{
+    const r=await window.SF.saveRecording({buffer:buf,mode,filename:fn});
+    if(r.ok){
+      const actualFn = r.filename || fn;
+      toast('✅',`Saved → ${actualFn}`);
+      logR(actualFn,r.path,mode,G.secs);
+    }
+    else toast('❌',r.error||'Save failed');
+  }catch(e){toast('❌',e.message);}
+}
+
+function logR(fn,path,mode,secs){
+  const s=JSON.parse(localStorage.getItem('sf_r')||'[]');
+  s.unshift({fn,path,mode,dur:fmt(secs),date:new Date().toLocaleDateString()});
+  localStorage.setItem('sf_r',JSON.stringify(s.slice(0,100)));
+}
+
+// ══════════════════════════════════════════════════════
+// WINDOW CONTROL HANDLERS
+// ══════════════════════════════════════════════════════
+$('app-min').addEventListener('click', () => window.SF.minimizeApp());
+$('app-close').addEventListener('click', () => window.SF.closeApp());
+
+// ══════════════════════════════════════════════════════
+// MODE NAVIGATION
+// ══════════════════════════════════════════════════════
+$$('.nb[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  if(G.rec){toast('⚠️','Stop recording before switching modes');return;}
+  switchMode(b.dataset.mode);
+}));
+
+function switchMode(mode){
+  if(G.mode==='teaching' && typeof Teaching !== 'undefined' && Teaching.deactivate) Teaching.deactivate();
+  if(G.mode==='storytelling' && typeof Story !== 'undefined' && Story.deactivate) Story.deactivate();
+
+  G.mode=mode;
+  $$('.panel').forEach(p=>p.classList.add('hidden'));
+  $(`panel-${mode}`)?.classList.remove('hidden');
+  $$('.nb[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+  
+  if(mode==='teaching' && typeof Teaching !== 'undefined' && Teaching.activate) Teaching.activate();
+  if(mode==='storytelling') Story.activate();
+  if(mode==='library') loadLib();
+}
+
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if(e.code==='Space'){e.preventDefault();
+    if(G.mode==='teaching') G.rec?Teaching.stop():Teaching.start();
+    else if(G.mode==='storytelling') G.rec?Story.stop():Story.start();
+  }
+  if(e.code==='KeyM'){
+    if(G.mode==='teaching') addMark('t-marks');
+    else addMark('s-marks');
+  }
+  if(e.code==='Escape') $$('.mback').forEach(m=>m.classList.add('hidden'));
+});
+
+// ══════════════════════════════════════════════════════
+// SOURCE PICKER
+// ══════════════════════════════════════════════════════
+async function pickSrc(cb){
+  openM('m-src');
+  const grid=$('sgrid');
+  grid.innerHTML='<div style="color:var(--t3);padding:20px;text-align:center">Loading sources…</div>';
+  let sources=[];
+  try{ sources=await window.SF.getSources(); }catch(e){ toast('❌',`Cannot get sources: ${e.message}`); return; }
+  if(!sources.length){
+    grid.innerHTML='<div style="color:var(--t3);padding:20px;text-align:center">⚠️ No sources. Grant Screen Recording in System Settings.</div>';
+    return;
+  }
+  grid.innerHTML='';
+  sources.forEach(src=>{
+    const item=document.createElement('div');
+    item.className='sitem';
+    item.innerHTML=`<img class="sthumb" src="${src.thumbnail}" alt="${src.name}"/><div class="sname">${src.name}</div>`;
+    item.addEventListener('click',()=>{
+      $$('.sitem').forEach(i=>i.classList.remove('sel')); item.classList.add('sel');
+      setTimeout(()=>{closeM('m-src');cb(src);},200);
+    });
+    grid.appendChild(item);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// TEACHING MODE
+// ══════════════════════════════════════════════════════
+const Teaching=(()=>{
+  let scrnStr=null, camStr=null, aniF=null;
+  let selSrc=null, mr=null, chunks=[], mime='', mirrored=false;
+  
+  let cachedCX = 0, cachedCY = 0, cachedR = 0;
+
+  const cvs=$('t-canvas');
+  const ctx=cvs.getContext('2d');
+  const svid=document.createElement('video');
+  svid.autoplay=true; svid.muted=true;
+
+  function updateBubblePosCache() {
+    const bub = $('bubble');
+    if (!bub || !cvs) return;
+    const cr = cvs.getBoundingClientRect();
+    const br = bub.getBoundingClientRect();
+    if (cr.width === 0 || cr.height === 0) return;
+    const sx = cvs.width / cr.width;
+    const sy = cvs.height / cr.height;
+    cachedCX = (br.left - cr.left + br.width / 2) * sx;
+    cachedCY = (br.top - cr.top + br.height / 2) * sy;
+    cachedR = (br.width / 2) * sx;
+  }
+
+  window.addEventListener('resize', updateBubblePosCache);
+
+  // Source picker
+  $('t-src-btn').addEventListener('click',()=>pickSrc(gotSrc));
+  $('t-cta').addEventListener('click',()=>pickSrc(gotSrc));
+
+  // Record controls
+  $('t-rec').addEventListener('click',()=>G.rec?stop():start());
+  $('t-live').addEventListener('click',()=>G.streaming?stop():start({isLive:true}));
+  $('t-pause').addEventListener('click',pauseTog);
+  $('t-stop').addEventListener('click',stop);
+  $('t-mark').addEventListener('click',()=>addMark('t-marks'));
+
+  // Loom Mode Float toggles
+  $('t-widget-tog').addEventListener('click', () => toggleWidget(true));
+  $('w-exit').addEventListener('click', () => toggleWidget(false));
+  $('w-rec').addEventListener('click', () => G.rec ? stop() : start());
+  $('w-pause').addEventListener('click', pauseTog);
+  $('w-mic').addEventListener('click', () => {
+    const active = $('mic-tog').checked = !$('mic-tog').checked;
+    if (camStr) camStr.getAudioTracks().forEach(t => t.enabled = active);
+    $('w-mic').textContent = active ? '🎙️' : '🔇';
+    toast(active ? '🎙️' : '🔇', active ? 'Mic enabled' : 'Mic muted');
+  });
+
+  // Countdown toggle
+  $('t-cd').addEventListener('click',()=>{
+    G.cd=G.cd===3?5:G.cd===5?0:3;
+    $('t-cd-lbl').textContent=G.cd>0?`${G.cd}s`:'Off';
+    toast('⏱',`Countdown: ${G.cd>0?G.cd+'s':'off'}`);
+  });
+
+  // Cam/mic toggles
+  $('cam-tog').addEventListener('change',e=>{
+    if(e.target.checked){$('bubble').style.display='';startCam();}
+    else{$('bubble').style.display='none';stopCam();}
+  });
+  $('mic-tog').addEventListener('change',e=>{
+    if(camStr) camStr.getAudioTracks().forEach(t=>t.enabled=e.target.checked);
+  });
+
+  // Bubble controls
+  $('mir-btn').addEventListener('click',()=>{
+    mirrored=!mirrored; $('bubble').classList.toggle('mir',mirrored);
+  });
+  $('hid-btn').addEventListener('click',()=>{
+    $('bubble').style.display='none'; $('cam-tog').checked=false; stopCam();
+  });
+
+  // Draggable bubble
+  (()=>{
+    const bub=$('bubble'), wrap=$('t-preview');
+    let drag=false, ox,oy, bl,bt;
+    bub.addEventListener('mousedown',e=>{
+      if(e.target.closest('.btip,.b-resize')) return;
+      drag=true; ox=e.clientX; oy=e.clientY;
+      const br=bub.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+      bl=br.left-wr.left; bt=br.top-wr.top;
+      bub.style.cursor='grabbing'; e.preventDefault();
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!drag) return;
+      const wr=wrap.getBoundingClientRect();
+      const bw=bub.offsetWidth, bh=bub.offsetHeight;
+      const nl=Math.max(0,Math.min(bl+e.clientX-ox,wr.width-bw));
+      const nt=Math.max(0,Math.min(bt+e.clientY-oy,wr.height-bh));
+      bub.style.left=nl+'px'; bub.style.top=nt+'px';
+      bub.style.right='auto'; bub.style.bottom='auto';
+      updateBubblePosCache();
+    });
+    document.addEventListener('mouseup',()=>{drag=false; bub.style.cursor='move';});
+  })();
+
+  // Resizable bubble
+  (()=>{
+    const handle=$('b-resize'), bub=$('bubble');
+    let res=false, ox,oy, osize;
+    handle.addEventListener('mousedown',e=>{
+      res=true; ox=e.clientX; oy=e.clientY; osize=bub.offsetWidth;
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!res) return;
+      const d=((e.clientX-ox)+(e.clientY-oy))/2;
+      const ns=Math.max(80,Math.min(300,osize+d));
+      bub.style.width=ns+'px'; bub.style.height=ns+'px';
+      updateBubblePosCache();
+    });
+    document.addEventListener('mouseup',()=>{res=false;});
+  })();
+
+  // ── Loom Floating Widget Mode Setup ──
+  function toggleWidget(enable) {
+    if (G.rec) { toast('⚠️', 'Stop recording before toggling float mode'); return; }
+    G.widgetMode = enable;
+    if (enable) {
+      window.SF.enterWidgetMode();
+      $('app').classList.add('widget-mode');
+      
+      const bub = $('bubble');
+      bub.style.bottom = '90px';
+      bub.style.right = '30px';
+      bub.style.left = 'auto';
+      bub.style.top = 'auto';
+
+      window.SF.setIgnoreMouse(true, { forward: true });
+
+      const activeElements = [bub, $('widget-bar'), $('gcount')];
+      activeElements.forEach(el => {
+        el.addEventListener('mouseenter', handleMouseEnter);
+        el.addEventListener('mouseleave', handleMouseLeave);
+      });
+      toast('🚀', 'Float mode activated');
+    } else {
+      window.SF.exitWidgetMode();
+      $('app').classList.remove('widget-mode');
+      
+      window.SF.setIgnoreMouse(false);
+      
+      const bub = $('bubble');
+      const activeElements = [bub, $('widget-bar'), $('gcount')];
+      activeElements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    }
+    setTimeout(updateBubblePosCache, 150);
+  }
+
+  function handleMouseEnter() { window.SF.setIgnoreMouse(false); }
+  function handleMouseLeave() { window.SF.setIgnoreMouse(true, { forward: true }); }
+
+  async function gotSrc(src){
+    selSrc=src; $('t-src-name').textContent=src.name;
+    $('t-empty').classList.add('hidden'); cvs.classList.remove('hidden');
+    await startScreen(src.id);
+  }
+
+  async function startScreen(srcId){
+    if(scrnStr) scrnStr.getTracks().forEach(t=>t.stop());
+    try{
+      scrnStr=await navigator.mediaDevices.getUserMedia({
+        audio:false,
+        video:{mandatory:{chromeMediaSource:'desktop',chromeMediaSourceId:srcId,maxWidth:1920,maxHeight:1080}}
+      });
+      
+      const onMetadata = () => {
+        svid.play();
+        cvs.width=svid.videoWidth||1280; cvs.height=svid.videoHeight||720;
+        updateBubblePosCache();
+        drawLoop();
+      };
+
+      svid.onloadedmetadata = onMetadata;
+      svid.srcObject = scrnStr;
+
+      if (svid.readyState >= 1) {
+        onMetadata();
+      }
+    }catch(err){ 
+      console.error("Screen capture error details:", err.name, err.message, err.stack); 
+      if (err.name === 'NotReadableError') {
+        toast('⚠️', 'Permission blocked. Please check macOS Screen Recording settings for VS Code/Terminal, or ensure the window is not minimized.');
+      } else {
+        toast('❌', `Screen capture failed: ${err.name} - ${err.message}`); 
+      }
+    }
+    await startCam();
+  }
+
+  async function startCam(){
+    if(!$('cam-tog').checked) return;
+    const mic=$('mic-tog').checked;
+    try{
+      camStr=await navigator.mediaDevices.getUserMedia({video:true,audio:mic});
+      $('cam-vid').srcObject=camStr; $('cam-vid').play();
+      $('bubble').style.display='';
+    }catch(err){ console.warn('Cam:',err.message); $('cam-tog').checked=false; $('bubble').style.display='none'; }
+  }
+
+  function stopCam(){ if(camStr){camStr.getTracks().forEach(t=>t.stop()); camStr=null;} }
+
+  // ── Throttled draw loop ──────────────────────────────────────────
+  // Preview is capped at 24fps; during active recording/streaming it
+  // runs at the user-chosen G.fps. This dramatically cuts CPU & GPU
+  // load (and heat) when the user is just previewing, not recording.
+  let _lastDraw = 0;
+  function drawLoop(){
+    if(aniF) cancelAnimationFrame(aniF);
+    const bub=$('bubble');
+    const cv=$('cam-vid');
+    const camTog=$('cam-tog');
+    
+    updateBubblePosCache();
+
+    function frame(ts){
+      if (G.mode !== 'teaching') {
+        aniF = null;
+        return;
+      }
+
+      // Throttle: preview → 24fps max; recording/streaming → G.fps
+      const targetFPS = (G.rec || G.streaming) ? G.fps : 24;
+      const interval = 1000 / targetFPS;
+      if (ts - _lastDraw < interval) {
+        aniF = requestAnimationFrame(frame);
+        return;
+      }
+      _lastDraw = ts;
+
+      if(svid.readyState>=2) ctx.drawImage(svid,0,0,cvs.width,cvs.height);
+
+      // Draw webcam bubble
+      const camOn=camTog.checked && bub.style.display!=='none' && cv.readyState>=2;
+      if(camOn){
+        const cx = cachedCX;
+        const cy = cachedCY;
+        const r = cachedR;
+        ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+        if(mirrored){ctx.translate(cx*2,0); ctx.scale(-1,1);}
+        
+        let fStr = 'none';
+        if (G.camFilter === 'brighten') fStr = 'brightness(1.12) contrast(1.02) saturate(1.04)';
+        else if (G.camFilter === 'smooth') fStr = 'brightness(1.08) contrast(1.02) blur(0.6px)';
+        else if (G.camFilter === 'glow') fStr = 'brightness(1.15) contrast(1.05) saturate(1.08)';
+        ctx.filter = fStr;
+
+        const minDim = Math.min(cv.videoWidth, cv.videoHeight);
+        const cropX = (cv.videoWidth - minDim) / 2;
+        const cropY = (cv.videoHeight - minDim) / 2;
+        ctx.drawImage(cv, cropX, cropY, minDim, minDim, cx - r, cy - r, r * 2, r * 2);
+        ctx.restore();
+        // Ring
+        ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r+2,0,Math.PI*2);
+        const grd=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+        grd.addColorStop(0,G.rec?'#ef4444':'#4f46e5'); grd.addColorStop(1,G.rec?'#f97316':'#7c3aed');
+        ctx.strokeStyle=grd; ctx.lineWidth=4; ctx.stroke(); ctx.restore();
+      }
+
+      // REC badge on canvas
+      if(G.rec&&!G.paused){
+        ctx.save();
+        ctx.fillStyle='rgba(255,255,255,.8)'; ctx.fillRect(cvs.width-85,6,78,22); ctx.restore();
+        ctx.save(); ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.arc(cvs.width-70,17,6,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#0f172a'; ctx.font='bold 11px Inter,sans-serif'; ctx.fillText('REC',cvs.width-58,21);
+        ctx.restore();
+      }
+      aniF=requestAnimationFrame(frame);
+    }
+    frame(0);
+  }
+
+  async function start(opts = {}){
+    if(!selSrc){toast('⚠️','Please select a screen source first');return;}
+    const isLive = !!opts.isLive;
+    if (isLive && !G.ytKey) {
+      toast('⚠️', 'Please enter your YouTube Stream Key in Settings first.');
+      $('nb-settings').click();
+      return;
+    }
+    
+    if (isLive) {
+      toast('📡', 'Starting YouTube live stream...');
+      const res = await window.SF.startYoutubeStream({
+        streamKey: G.ytKey,
+        serverUrl: G.ytUrl,
+        fps: G.fps
+      });
+      if (!res.ok) {
+        toast('❌', `Stream failed: ${res.error}`);
+        return;
+      }
+      G.streaming = true;
+      $('live-badge').classList.remove('hidden');
+      $('t-live').classList.add('streaming');
+      $('t-live').innerHTML = '<span class="live-ico">⏹</span><span class="blbl">Stop Live</span>';
+    }
+
+    await runCD(G.cd);
+    chunks=[]; mime=getMime();
+    const cstr=cvs.captureStream(G.fps);
+    const tracks=[...cstr.getVideoTracks()];
+    if(camStr){
+      const enhancedTrack = await getEnhancedAudioTrack(camStr);
+      if(enhancedTrack) tracks.push(enhancedTrack);
+    }
+    const ms=new MediaStream(tracks);
+    mr=new MediaRecorder(ms,{mimeType:mime,videoBitsPerSecond:getBR()});
+    mr.ondataavailable=async e=>{
+      if(e.data?.size>0) {
+        chunks.push(e.data);
+        if (G.streaming) {
+          const buf = new Uint8Array(await e.data.arrayBuffer());
+          window.SF.writeStreamChunk(buf);
+        }
+      }
+    };
+    mr.start(1000);
+    G.rec=true; G.paused=false;
+    
+    $('rec-badge').classList.remove('hidden');
+    $('t-timer').classList.add('rec');
+    if (!isLive) {
+      $('t-rec').classList.add('rec');
+    }
+    $('t-pause').disabled=false; $('t-stop').disabled=false; $('t-mark').disabled=false;
+    $('b-ring').classList.add('rrec');
+    
+    $('w-rec').textContent = '⏹';
+    $('w-rec').classList.add('on');
+    $('w-pause').disabled = false;
+    $('w-timer').classList.add('rec');
+
+    startT('t-timer');
+    toast('🔴', isLive ? 'Streaming live to YouTube' : 'Recording started');
+  }
+
+  async function stop(){
+    if(!G.rec && !G.streaming) return;
+    
+    const wasStreaming = G.streaming;
+    
+    if (G.streaming) {
+      G.streaming = false;
+      await window.SF.stopYoutubeStream();
+      $('live-badge').classList.add('hidden');
+      $('t-live').classList.remove('streaming');
+      $('t-live').innerHTML = '<span class="live-ico">📡</span><span class="blbl">Go Live</span>';
+    }
+    
+    if (G.rec) {
+      mr.stop();
+      await new Promise(r=>mr.addEventListener('stop',r,{once:true}));
+      const dur=G.secs; G.rec=false; G.paused=false;
+      
+      $('rec-badge').classList.add('hidden');
+      $('t-timer').classList.remove('rec'); $('t-rec').classList.remove('rec');
+      $('t-pause').disabled=true; $('t-stop').disabled=true; $('t-mark').disabled=true;
+      $('t-pause').querySelector('.blbl').textContent='Pause';
+      $('b-ring').classList.remove('rrec');
+      
+      $('w-rec').textContent = '⏺';
+      $('w-rec').classList.remove('on');
+      $('w-pause').disabled = true;
+      $('w-pause').textContent = '⏸';
+      $('w-timer').classList.remove('rec');
+  
+      stopT('t-timer'); G.chapters=[]; $('t-marks').innerHTML='';
+      
+      if (!wasStreaming || G.ytAutoRecord) {
+        await doSave(chunks,mime,'teaching');
+      } else {
+        toast('📡', 'Stream ended (not recorded)');
+      }
+    } else {
+      stopT('t-timer'); G.chapters=[]; $('t-marks').innerHTML='';
+    }
+    if(selSrc) await startScreen(selSrc.id);
+  }
+
+  function pauseTog(){
+    if(!G.rec) return;
+    G.paused=!G.paused;
+    const lbl=$('t-pause').querySelector('.blbl');
+    if(G.paused){
+      mr.pause();
+      toast('⏸','Paused');
+      lbl.textContent='Resume';
+      $('w-pause').textContent = '▶';
+    } else {
+      mr.resume();
+      toast('▶','Resumed');
+      lbl.textContent='Pause';
+      $('w-pause').textContent = '⏸';
+    }
+  }
+
+  async function activate(){
+    if(selSrc) await startScreen(selSrc.id);
+  }
+
+  function deactivate(){
+    if(scrnStr){scrnStr.getTracks().forEach(t=>t.stop()); scrnStr=null;}
+    stopCam();
+    if(aniF) cancelAnimationFrame(aniF);
+    aniF = null;
+  }
+
+  return {start,stop,activate,deactivate};
+})();
+
+// ══════════════════════════════════════════════════════
+// STORYTELLING MODE
+// ══════════════════════════════════════════════════════
+const Story=(()=>{
+  let camStr=null, mr=null, chunks=[], mime='';
+  let pdfDoc=null, pdfPage=1;
+  let tpOn=false, tpY=0, tpTmr=null;
+  let dtool='pen', dclr='#ef4444', dsz=4;
+  let drawing=false, snapData=null, shapeX=0, shapeY=0;
+  let bgchoice='none';
+
+  async function activate(){
+    if(!camStr) await startCam();
+  }
+
+  async function startCam(){
+    try{
+      camStr=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+      $('st-vid').srcObject=camStr; $('st-vid').play();
+    }catch(e){ toast('⚠️',`Camera: ${e.message}`); }
+  }
+
+  function stopCam(){
+    if(camStr){camStr.getTracks().forEach(t=>t.stop()); camStr=null;}
+    $('st-vid').srcObject=null;
+  }
+
+  function deactivate(){
+    stopCam();
+    stopTp();
+  }
+
+  $$('.stab').forEach(t=>t.addEventListener('click',()=>{
+    $$('.stab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
+    $$('.spanel').forEach(p=>p.classList.remove('on'));
+    $(`sp-${t.dataset.sp}`)?.classList.add('on');
+  }));
+
+  $('s-rec').addEventListener('click',()=>G.rec?stop():start());
+  $('s-live').addEventListener('click',()=>G.streaming?stop():start({isLive:true}));
+  $('s-pause').addEventListener('click',pauseTog);
+  $('s-stop').addEventListener('click',stop);
+  $('s-mark').addEventListener('click',()=>addMark('s-marks'));
+  $('s-cd').addEventListener('click',()=>{
+    G.cd=G.cd===3?5:G.cd===5?0:3; $('s-cd-lbl').textContent=G.cd>0?`${G.cd}s`:'Off';
+  });
+
+  async function start(opts = {}){
+    if(!camStr){await startCam(); if(!camStr){toast('❌','Camera required');return;}}
+    const isLive = !!opts.isLive;
+    if (isLive && !G.ytKey) {
+      toast('⚠️', 'Please enter your YouTube Stream Key in Settings first.');
+      $('nb-settings').click();
+      return;
+    }
+    
+    if (isLive) {
+      toast('📡', 'Starting YouTube live stream...');
+      const res = await window.SF.startYoutubeStream({
+        streamKey: G.ytKey,
+        serverUrl: G.ytUrl,
+        fps: G.fps
+      });
+      if (!res.ok) {
+        toast('❌', `Stream failed: ${res.error}`);
+        return;
+      }
+      G.streaming = true;
+      $('live-badge').classList.remove('hidden');
+      $('s-live').classList.add('streaming');
+      $('s-live').innerHTML = '<span class="live-ico">⏹</span><span class="blbl">Stop Live</span>';
+    }
+
+    await runCD(G.cd);
+    const tracks = [...camStr.getVideoTracks()];
+    const enhancedTrack = await getEnhancedAudioTrack(camStr);
+    if(enhancedTrack) tracks.push(enhancedTrack);
+    const ms = new MediaStream(tracks);
+    mr=new MediaRecorder(ms,{mimeType:mime,videoBitsPerSecond:getBR()});
+    mr.ondataavailable=async e=>{
+      if(e.data?.size>0) {
+        chunks.push(e.data);
+        if (G.streaming) {
+          const buf = new Uint8Array(await e.data.arrayBuffer());
+          window.SF.writeStreamChunk(buf);
+        }
+      }
+    };
+    mr.start(1000);
+    G.rec=true; G.paused=false;
+    $('rec-badge').classList.remove('hidden');
+    $('s-timer').classList.add('rec'); 
+    if (!isLive) {
+      $('s-rec').classList.add('rec');
+    }
+    $('s-pause').disabled=false; $('s-stop').disabled=false; $('s-mark').disabled=false;
+    $('st-cam').classList.add('rec');
+    startT('s-timer');
+    toast('🔴', isLive ? 'Streaming live to YouTube' : 'Storytelling recording started');
+  }
+
+  async function stop(){
+    if(!G.rec && !G.streaming) return;
+    
+    const wasStreaming = G.streaming;
+    
+    if (G.streaming) {
+      G.streaming = false;
+      await window.SF.stopYoutubeStream();
+      $('live-badge').classList.add('hidden');
+      $('s-live').classList.remove('streaming');
+      $('s-live').innerHTML = '<span class="live-ico">📡</span><span class="blbl">Go Live</span>';
+    }
+    
+    if (G.rec) {
+      mr.stop();
+      await new Promise(r=>mr.addEventListener('stop',r,{once:true}));
+      G.rec=false; G.paused=false;
+      $('rec-badge').classList.add('hidden');
+      $('s-timer').classList.remove('rec'); $('s-rec').classList.remove('rec');
+      $('s-pause').disabled=true; $('s-stop').disabled=true; $('s-mark').disabled=true;
+      $('s-pause').querySelector('.blbl').textContent='Pause';
+      $('st-cam').classList.remove('rec');
+      stopT('s-timer'); G.chapters=[]; $('s-marks').innerHTML='';
+      
+      if (!wasStreaming || G.ytAutoRecord) {
+        await doSave(chunks,mime,'stories');
+      } else {
+        toast('📡', 'Stream ended (not recorded)');
+      }
+    } else {
+      stopT('s-timer'); G.chapters=[]; $('s-marks').innerHTML='';
+    }
+  }
+
+  function pauseTog(){
+    if(!G.rec) return;
+    G.paused=!G.paused;
+    const lbl=$('s-pause').querySelector('.blbl');
+    if(G.paused){mr.pause();toast('⏸','Paused');lbl.textContent='Resume';}
+    else{mr.resume();toast('▶','Resumed');lbl.textContent='Pause';}
+  }
+
+  const svid=$('svid');
+  $('load-vid').addEventListener('click',loadVid);
+  $('v-ch').addEventListener('click',loadVid);
+
+  async function loadVid(){
+    const p=await window.SF.openFile({title:'Select Video',filters:[{name:'Videos',extensions:['mp4','mov','webm','avi','m4v']}]});
+    if(!p) return;
+    const d=await window.SF.readFileB64(p); if(!d){toast('❌','Cannot read video');return;}
+    svid.src=d; svid.style.display='block'; svid.classList.remove('hidden');
+    $('v-mt').classList.add('hidden'); $('vic').classList.remove('hidden'); $('vic').style.display='flex';
+    toast('🎬','Video loaded');
+  }
+
+  $('v-play').addEventListener('click',()=>{
+    if(svid.paused){svid.play();$('v-play').textContent='⏸';}
+    else{svid.pause();$('v-play').textContent='▶';}
+  });
+  svid.addEventListener('timeupdate',()=>{
+    if(!svid.duration) return;
+    $('vpfill').style.width=(svid.currentTime/svid.duration*100)+'%';
+    $('vtime').textContent=fmts(Math.floor(svid.currentTime));
+  });
+  $('vprog').addEventListener('click',e=>{
+    if(!svid.duration) return;
+    const r=$('vprog').getBoundingClientRect();
+    svid.currentTime=(e.clientX-r.left)/r.width*svid.duration;
+  });
+
+  $('load-doc').addEventListener('click',loadDoc);
+  $('doc-ch').addEventListener('click',loadDoc);
+  $('doc-prv').addEventListener('click',()=>navPdf(-1));
+  $('doc-nxt').addEventListener('click',()=>navPdf(1));
+  $('story-split').addEventListener('input', async (e) => {
+    const w = e.target.value;
+    $('st-side-panel').style.width = w + 'px';
+    $('st-side-panel').style.minWidth = w + 'px';
+    if (pdfDoc) await renderPdf();
+  });
+
+  $('doc-zout').addEventListener('click', () => adjustZoom(-0.2));
+  $('doc-zin').addEventListener('click', () => adjustZoom(0.2));
+
+  async function adjustZoom(delta) {
+    G.docZoom = Math.max(0.5, Math.min(3.0, G.docZoom + delta));
+    $('doc-zoom-lbl').textContent = Math.round(G.docZoom * 100) + '%';
+    
+    if (pdfDoc) {
+      await renderPdf();
+    } else {
+      const img = $('imgview');
+      if (G.docZoom > 1.0) {
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+        img.style.width = (G.docZoom * 100) + '%';
+      } else {
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.width = 'auto';
+      }
+    }
+  }
+
+  async function loadDoc(){
+    const p=await window.SF.openFile({title:'Select Document',filters:[{name:'Docs & Images',extensions:['pdf','png','jpg','jpeg','gif']}]});
+    if(!p) return;
+    const d=await window.SF.readFileB64(p); if(!d){toast('❌','Cannot read file');return;}
+    const ext=p.split('.').pop().toLowerCase();
+    
+    // Reset zoom
+    G.docZoom = 1.0;
+    $('doc-zoom-lbl').textContent = '100%';
+    
+    $('docview').classList.remove('hidden'); $('docview').style.display='block';
+    $('dcc').classList.remove('hidden'); $('dcc').style.display='flex';
+    $('d-mt').classList.add('hidden');
+    if(ext==='pdf') await loadPdf(d); else loadImg(d);
+  }
+
+  async function loadPdf(data){
+    if(!window.pdfjsLib){
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const b64=data.split(',')[1]; const bin=atob(b64);
+    const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    try{
+      pdfDoc=await pdfjsLib.getDocument({data:bytes}).promise; pdfPage=1;
+      $('imgview').classList.add('hidden'); await renderPdf();
+      toast('📄',`PDF: ${pdfDoc.numPages} pages`);
+    }catch(e){toast('❌',`PDF: ${e.message}`);}
+  }
+
+  async function renderPdf(){
+    const page=await pdfDoc.getPage(pdfPage);
+    const cvs=$('pdfcvs'); const cont=$('docview');
+    // Compute scale taking zoom into account (subtract padding to avoid scrollbars at 100%)
+    const baseScale = (cont.clientWidth - 20) / page.getViewport({scale:1}).width;
+    const vp = page.getViewport({scale: baseScale * G.docZoom});
+    cvs.width=vp.width; cvs.height=vp.height; cvs.classList.remove('hidden');
+    await page.render({canvasContext:cvs.getContext('2d'),viewport:vp}).promise;
+    $('pg-info').textContent=`${pdfPage} / ${pdfDoc.numPages}`;
+  }
+
+  async function navPdf(d){ if(!pdfDoc) return; const n=pdfPage+d; if(n<1||n>pdfDoc.numPages) return; pdfPage=n; await renderPdf(); }
+
+  function loadImg(d){
+    pdfDoc=null; $('pdfcvs').classList.add('hidden');
+    
+    // Reset image styling
+    const img=$('imgview'); 
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.width = 'auto';
+    
+    img.src=d; img.classList.remove('hidden');
+    $('pg-info').textContent='1 / 1'; toast('🖼','Image loaded');
+  }
+
+  const ann=$('ann'), actx=ann.getContext('2d');
+  let annActive=false;
+
+  new ResizeObserver(()=>{
+    const p=$('st-cam'); ann.width=p.clientWidth; ann.height=p.clientHeight;
+  }).observe($('st-cam'));
+
+  $('s-draw').addEventListener('click',()=>{
+    annActive=!annActive;
+    ann.classList.toggle('hidden',!annActive);
+    $('dbar').classList.toggle('hidden',!annActive);
+    $('s-draw').classList.toggle('on',annActive);
+  });
+  $$('.dtool[data-tool]').forEach(b=>b.addEventListener('click',()=>{
+    $$('.dtool[data-tool]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); dtool=b.dataset.tool;
+  }));
+  $$('.cdot').forEach(b=>b.addEventListener('click',()=>{
+    $$('.cdot').forEach(x=>x.classList.remove('on')); b.classList.add('on'); dclr=b.dataset.color;
+  }));
+  $('draw-sz').addEventListener('input',e=>dsz=+e.target.value);
+  $('draw-clr').addEventListener('click',()=>actx.clearRect(0,0,ann.width,ann.height));
+  $('draw-x').addEventListener('click',()=>{
+    annActive=false; ann.classList.add('hidden'); $('dbar').classList.add('hidden'); $('s-draw').classList.remove('on');
+  });
+
+  ann.addEventListener('mousedown',e=>{
+    if(!annActive) return;
+    drawing=true;
+    const pos=ap(e); shapeX=pos.x; shapeY=pos.y;
+    setStyle();
+    if(dtool==='pen'){actx.beginPath(); actx.moveTo(pos.x,pos.y);}
+    else snapData=actx.getImageData(0,0,ann.width,ann.height);
+  });
+  ann.addEventListener('mousemove',e=>{
+    if(!drawing||!annActive) return;
+    const pos=ap(e); setStyle();
+    if(dtool==='pen'){actx.lineTo(pos.x,pos.y); actx.stroke();}
+    else if(snapData){actx.putImageData(snapData,0,0); drawShape(shapeX,shapeY,pos.x,pos.y);}
+  });
+  ann.addEventListener('mouseup',e=>{
+    if(!drawing) return; drawing=false;
+    if(dtool!=='pen'&&snapData){const pos=ap(e); actx.putImageData(snapData,0,0); drawShape(shapeX,shapeY,pos.x,pos.y); snapData=null;}
+  });
+
+  function ap(e){ const r=ann.getBoundingClientRect(); return{x:(e.clientX-r.left)*(ann.width/r.width),y:(e.clientY-r.top)*(ann.height/r.height)}; }
+  function setStyle(){ actx.strokeStyle=dclr; actx.lineWidth=dsz; actx.lineCap='round'; actx.lineJoin='round'; }
+  function drawShape(x1,y1,x2,y2){
+    actx.beginPath();
+    if(dtool==='rect'){actx.strokeRect(x1,y1,x2-x1,y2-y1);}
+    else if(dtool==='circle'){const rx=(x2-x1)/2,ry=(y2-y1)/2; actx.ellipse(x1+rx,y1+ry,Math.abs(rx),Math.abs(ry),0,0,Math.PI*2); actx.stroke();}
+    else if(dtool==='arrow'){
+      const hl=20,ang=Math.atan2(y2-y1,x2-x1);
+      actx.moveTo(x1,y1); actx.lineTo(x2,y2);
+      actx.lineTo(x2-hl*Math.cos(ang-Math.PI/6),y2-hl*Math.sin(ang-Math.PI/6));
+      actx.moveTo(x2,y2);
+      actx.lineTo(x2-hl*Math.cos(ang+Math.PI/6),y2-hl*Math.sin(ang+Math.PI/6));
+      actx.stroke();
+    }
+  }
+
+  $('s-tp').addEventListener('click',()=>{
+    const ov=$('tpov'); ov.classList.toggle('hidden');
+    $('s-tp').classList.toggle('on',!ov.classList.contains('hidden'));
+  });
+  $('tp-play').addEventListener('click',()=>tpOn?stopTp():startTp());
+  $('tp-x').addEventListener('click',()=>{$('tpov').classList.add('hidden');$('s-tp').classList.remove('on');stopTp();});
+  $('tp-edit').addEventListener('click',()=>openM('m-tp'));
+  $('tp-save').addEventListener('click',()=>{
+    const txt=$('tp-input').value.trim();
+    $('tptxt').textContent=txt||'Click Edit to write your script…';
+    $('tptxt').style.transform='translateY(0)'; tpY=0;
+    closeM('m-tp'); toast('📝','Script saved');
+  });
+
+  function startTp(){
+    tpOn=true; $('tp-play').textContent='⏸';
+    const el=$('tptxt');
+    tpTmr=setInterval(()=>{
+      tpY+=+$('tp-spd').value*0.4; el.style.transform=`translateY(-${tpY}px)`;
+      if(tpY>=el.scrollHeight){stopTp();tpY=0;el.style.transform='translateY(0)';}
+    },50);
+  }
+  function stopTp(){ tpOn=false; clearInterval(tpTmr); $('tp-play').textContent='▶'; }
+
+  $('s-bg').addEventListener('click',()=>openM('m-bg'));
+  $$('.bgopt').forEach(o=>o.addEventListener('click',()=>{
+    $$('.bgopt').forEach(x=>x.classList.remove('on')); o.classList.add('on'); bgchoice=o.dataset.bg;
+  }));
+  $('apply-bg').addEventListener('click',()=>{
+    const v=$('st-vid'); v.className='';
+    if(bgchoice==='blur') v.classList.add('blurbg');
+    if(bgchoice==='dark') v.classList.add('darkbg');
+    $('s-bg').classList.toggle('on',bgchoice!=='none');
+    closeM('m-bg'); toast('🌅',`Background: ${bgchoice}`);
+  });
+
+  const bgaud=$('bgaud');
+  $('s-mus').addEventListener('click',()=>openM('m-music'));
+  $('load-mus').addEventListener('click',loadMus);
+  $('mus-ch').addEventListener('click',loadMus);
+  $('mus-play').addEventListener('click',()=>{
+    if(bgaud.paused){bgaud.play();$('mus-play').textContent='⏸';}
+    else{bgaud.pause();$('mus-play').textContent='▶';}
+  });
+  $('mus-stop').addEventListener('click',()=>{bgaud.pause();bgaud.currentTime=0;$('mus-play').textContent='▶';});
+  $('mus-vol').addEventListener('input',e=>bgaud.volume=e.target.value/100);
+
+  async function loadMus(){
+    const p=await window.SF.openFile({title:'Select Audio',filters:[{name:'Audio',extensions:['mp3','wav','ogg','m4a','aac','flac']}]});
+    if(!p) return;
+    const d=await window.SF.readFileB64(p); if(!d){toast('❌','Cannot read audio');return;}
+    bgaud.src=d; bgaud.volume=0.3;
+    $('mus-name').textContent=p.split('/').pop();
+    $('m-mt').classList.add('hidden'); $('m-ok').classList.remove('hidden');
+    $('s-mus').classList.add('on'); toast('🎵','Music loaded');
+  }
+
+  return {activate,deactivate,start,stop};
+})();
+
+// ══════════════════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════════════════
+$('open-finder').addEventListener('click',async()=>{
+  try{const d=await window.SF.getDirs(); window.SF.openFinder(d.root);}catch(e){}
+});
+$$('.ltb').forEach(b=>b.addEventListener('click',()=>{
+  $$('.ltb').forEach(x=>x.classList.remove('on')); b.classList.add('on'); loadLib(b.dataset.lt);
+}));
+
+function loadLib(type='teaching'){
+  const grid=$('lgrd');
+  const recs=JSON.parse(localStorage.getItem('sf_r')||'[]').filter(r=>r.mode===type);
+  if(!recs.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px;color:var(--t3);text-align:center"><span style="font-size:48px">🎬</span><p>No ${type} recordings yet</p></div>`;
+    return;
+  }
+  grid.innerHTML=recs.map(r=>`<div class="lcard"><div class="lthumb">🎥</div><div class="linfo"><div class="lname">${r.fn}</div><div class="lmeta">${r.date} · ${r.dur}</div><div class="lacts"><button class="lbtn" onclick="window.SF.openFinder(${JSON.stringify(r.path)})">Show in Finder</button></div></div></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════
+(async()=>{
+  try{const d=await window.SF.getDirs(); $('save-path').textContent=d.root.replace('/Users/ramansingh','~');}catch(e){}
+})();
+
+$('sq').addEventListener('change',e=>G.q=e.target.value);
+$('sfps').addEventListener('change',e=>G.fps=+e.target.value);
+$('scd').addEventListener('change',e=>{
+  G.cd=+e.target.value;
+  $('t-cd-lbl').textContent=G.cd>0?`${G.cd}s`:'Off';
+  $('s-cd-lbl').textContent=G.cd>0?`${G.cd}s`:'Off';
+});
+
+// YouTube Live Streaming Settings Persistence
+G.ytKey = localStorage.getItem('sf_yt_key') || '';
+G.ytUrl = localStorage.getItem('sf_yt_url') || 'rtmp://a.rtmp.youtube.com/live2/';
+G.ytAutoRecord = localStorage.getItem('sf_yt_autorecord') !== 'false';
+
+$('yt-key').value = G.ytKey;
+$('yt-url').value = G.ytUrl;
+$('yt-autorecord').checked = G.ytAutoRecord;
+
+$('yt-key').addEventListener('input', e => {
+  G.ytKey = e.target.value;
+  localStorage.setItem('sf_yt_key', G.ytKey);
+});
+$('yt-url').addEventListener('input', e => {
+  G.ytUrl = e.target.value;
+  localStorage.setItem('sf_yt_url', G.ytUrl);
+});
+$('yt-autorecord').addEventListener('change', e => {
+  G.ytAutoRecord = e.target.checked;
+  localStorage.setItem('sf_yt_autorecord', G.ytAutoRecord);
+});
+
+$('yt-key-show').addEventListener('click', () => {
+  const el = $('yt-key');
+  if (el.type === 'password') {
+    el.type = 'text';
+    $('yt-key-show').textContent = 'Hide';
+  } else {
+    el.type = 'password';
+    $('yt-key-show').textContent = 'Show';
+  }
+});
+
+$('sf-filter').addEventListener('change', e => {
+  G.camFilter = e.target.value;
+  updateCamFilters();
+  toast('✨', `Beauty filter: ${e.target.value}`);
+});
+
+function updateCamFilters() {
+  const f = G.camFilter;
+  let filterStr = '';
+  if (f === 'brighten') filterStr = 'brightness(1.12) contrast(1.02) saturate(1.04)';
+  else if (f === 'smooth') filterStr = 'brightness(1.08) contrast(1.02) blur(0.6px)';
+  else if (f === 'glow') filterStr = 'brightness(1.15) contrast(1.05) saturate(1.08)';
+
+  if ($('cam-vid')) $('cam-vid').style.filter = filterStr;
+  if ($('st-vid')) $('st-vid').style.filter = filterStr;
+}
+
+// Unexpected Stream Errors & Stops handlers from Electron Main Process
+if (window.SF && window.SF.onStreamError) {
+  window.SF.onStreamError((err) => {
+    toast('❌', `Stream Error: ${err}`);
+  });
+  window.SF.onStreamStopped((code) => {
+    if (G.streaming) {
+      toast('⚠️', `Stream stopped unexpectedly (exit code: ${code})`);
+      if (G.mode === 'teaching') {
+        Teaching.stop();
+      } else if (G.mode === 'storytelling') {
+        Story.stop();
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

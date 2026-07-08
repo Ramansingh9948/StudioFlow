@@ -1,0 +1,427 @@
+/* ================================================================
+   StudioFlow — Storytelling Mode Styles
+   ================================================================ */
+
+/* ── Story Toolbar ──────────────────────────────────────────────── */
+.story-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.story-tools-left,
+.story-tools-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.tool-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-2);
+  border-color: var(--border-bright);
+}
+
+.tool-btn.active {
+  background: var(--accent-glow-2);
+  border-color: var(--border-accent);
+  color: var(--accent-3);
+}
+
+/* ── Story Layout ───────────────────────────────────────────────── */
+.story-layout {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Camera Panel ───────────────────────────────────────────────── */
+.story-camera-panel {
+  flex: 1;
+  position: relative;
+  background: #010108;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+}
+
+#story-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Camera offline placeholder */
+.story-camera-panel.no-camera::before {
+  content: '📷';
+  font-size: 48px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  opacity: 0.3;
+}
+
+/* ── Annotation Canvas ──────────────────────────────────────────── */
+.annotation-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* ── Draw Toolbar ───────────────────────────────────────────────── */
+.draw-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 40px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 30;
+  box-shadow: var(--shadow-md);
+  animation: slideDown var(--t-med) var(--ease-bounce);
+}
+
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-10px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.draw-tool {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--t-fast) var(--ease);
+  color: var(--text-2);
+}
+
+.draw-tool:hover, .draw-tool.active {
+  background: var(--accent-glow-2);
+  border-color: var(--border-accent);
+}
+
+.draw-colors {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0 4px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease-bounce);
+}
+
+.color-dot:hover { transform: scale(1.2); }
+.color-dot.active { border-color: white; transform: scale(1.2); }
+
+/* ── Teleprompter Overlay ───────────────────────────────────────── */
+.teleprompter-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.6) 70%, transparent 100%);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.teleprompter-inner {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px 40px 8px;
+}
+
+.teleprompter-text {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.01em;
+  transform: translateY(0);
+  transition: transform 0.1s linear;
+}
+
+.teleprompter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.tp-btn {
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.tp-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Content Side Panel ─────────────────────────────────────────── */
+.story-content-panel {
+  width: 360px;
+  min-width: 320px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+/* Panel tabs */
+.content-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+  gap: 2px;
+  background: var(--bg-app);
+}
+
+.panel-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--t-fast) var(--ease);
+  letter-spacing: 0.02em;
+}
+
+.panel-tab:hover { color: var(--text-2); }
+
+.panel-tab.active {
+  color: var(--accent-3);
+  border-bottom-color: var(--accent);
+}
+
+/* Sub-panels */
+.content-subpanel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  gap: 12px;
+}
+
+.content-subpanel.active { display: flex; }
+
+/* Panel empty state */
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-3);
+}
+
+.panel-empty-icon { font-size: 48px; }
+
+.panel-empty p {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 200px;
+}
+
+/* ── Video Player Panel ─────────────────────────────────────────── */
+#content-video {
+  width: 100%;
+  flex: 1;
+  border-radius: var(--radius-md);
+  background: #000;
+  object-fit: contain;
+  min-height: 0;
+  max-height: calc(100% - 60px);
+}
+
+#content-video::-webkit-media-controls {
+  display: none !important;
+}
+
+.video-panel-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.video-progress-wrap {
+  flex: 1;
+}
+
+.video-progress {
+  height: 4px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.video-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ── Document Projector Panel ───────────────────────────────────── */
+.doc-viewer {
+  flex: 1;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.pdf-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.img-viewer {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.doc-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.doc-page-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* ── Story Controls Bar (extended) ──────────────────────────────── */
+.story-controls-bar {
+  background: var(--glass-bg);
+}
+
+/* ── Virtual Background Filter ──────────────────────────────────── */
+#story-camera-video.bg-blur {
+  filter: blur(12px);
+}
+
+#story-camera-video.bg-dark {
+  filter: brightness(0.3) contrast(1.2);
+}
+
+#story-camera-video.bg-gradient {
+  filter: hue-rotate(240deg) saturate(0.8) brightness(0.8);
+}
+
+/* ── Recording state — pulsing red border on camera panel ─────── */
+.story-camera-panel.recording::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--danger);
+  pointer-events: none;
+  z-index: 40;
+  animation: recordBorder 2s ease-in-out infinite;
+}
+
+@keyframes recordBorder {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.3; }
+}
