@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StudioFlow — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f1a;
+      --bg2:     #131629;
+      --bg3:     #1a1f38;
+      --card:    rgba(255,255,255,0.04);
+      --bdr:     rgba(255,255,255,0.08);
+      --bdr2:    rgba(255,255,255,0.12);
+      --acc:     #6366f1;
+      --acc2:    #818cf8;
+      --grad:    linear-gradient(135deg, #6366f1, #8b5cf6);
+      --t1:      #f8fafc;
+      --t2:      #94a3b8;
+      --t3:      #475569;
+      --err:     #f43f5e;
+      --success: #10b981;
+      --warn:    #f59e0b;
+
+      /* Plan colors */
+      --free-c:       #6b7280;
+      --educator-c:   #6366f1;
+      --school-c:     #10b981;
+      --enterprise-c: #f59e0b;
+    }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--t1);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* ── Animated background ── */
+    .bg-orb {
+      position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+      pointer-events: none; animation: orbFloat 8s ease-in-out infinite;
+    }
+    .bg-orb.o1 { width:500px; height:500px; background:#6366f1; top:-150px; left:-100px; animation-delay:0s; }
+    .bg-orb.o2 { width:400px; height:400px; background:#8b5cf6; bottom:-100px; right:-80px; animation-delay:3s; }
+    .bg-orb.o3 { width:250px; height:250px; background:#10b981; top:40%; left:55%; animation-delay:5s; }
+    @keyframes orbFloat { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,-20px) scale(1.05)} }
+
+    /* Grid overlay */
+    .bg-grid {
+      position: fixed; inset: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ── Layout ── */
+    .shell {
+      position: relative; z-index: 1;
+      display: flex; width: 100%; height: 100vh;
+    }
+
+    /* Left brand panel */
+    .brand-panel {
+      width: 380px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      padding: 60px 48px;
+      border-right: 1px solid var(--bdr);
+      background: linear-gradient(160deg, rgba(99,102,241,0.06) 0%, transparent 60%);
+    }
+
+    .brand-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 48px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--grad); display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+    }
+    .brand-name { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+
+    .brand-tagline {
+      font-size: 28px; font-weight: 800; line-height: 1.3;
+      letter-spacing: -0.5px; margin-bottom: 20px;
+    }
+    .brand-tagline span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .brand-sub { font-size: 14px; color: var(--t2); line-height: 1.7; margin-bottom: 48px; }
+
+    .feat-list { display: flex; flex-direction: column; gap: 14px; }
+    .feat-item { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--t2); }
+    .feat-dot {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.25);
+      display: flex; align-items: center; justify-content: center; color: var(--acc2);
+    }
+
+    /* Right auth panel */
+    .auth-panel {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px; overflow-y: auto;
+    }
+
+    /* ── Views ── */
+    .view { display: none; width: 100%; max-width: 420px; }
+    .view.active { display: block; }
+
+    /* Plans view wider */
+    #view-plans { max-width: 900px; }
+
+    .view-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .view-sub { font-size: 14px; color: var(--t2); margin-bottom: 32px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--bdr);
+      border-radius: 20px;
+      padding: 32px;
+      backdrop-filter: blur(20px);
+    }
+
+    /* ── Form ── */
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--t2); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .field input {
+      width: 100%; height: 46px; padding: 0 16px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--bdr2);
+      border-radius: 12px; color: var(--t1); font-size: 14px; font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    .field input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+    .field input::placeholder { color: var(--t3); }
+    .field input.err { border-color: var(--err); }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%; height: 48px; border-radius: 12px; border: none; cursor: pointer;
+      background: var(--grad); color: #fff; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.3px;
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      width: 100%; height: 44px; border-radius: 12px; cursor: pointer;
+      background: transparent; border: 1px solid var(--bdr2); color: var(--t1);
+      font-size: 13px; font-weight: 600; display: flex; align-items: center;
+      justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 10px;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: var(--bdr2); }
+
+    .btn-link {
+      background: none; border: none; cursor: pointer; color: var(--acc2);
+      font-size: 13px; font-weight: 600; transition: color 0.2s; padding: 0;
+    }
+    .btn-link:hover { color: var(--acc); }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex; align-items: center; gap: 12px; margin: 20px 0;
+      font-size: 12px; color: var(--t3); font-weight: 600;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--bdr);
+    }
+
+    /* ── Error / success messages ── */
+    .msg {
+      padding: 12px 16px; border-radius: 10px; font-size: 13px;
+      font-weight: 500; margin-bottom: 18px; display: none;
+    }
+    .msg.err   { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; }
+    .msg.ok    { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+    .msg.info  { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: #a5b4fc; }
+    .msg.show  { display: flex; align-items: center; gap: 10px; }
+
+    /* ── Footer links ── */
+    .auth-footer {
+      margin-top: 24px; text-align: center; font-size: 13px; color: var(--t2);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* ── Loading spinner ── */
+    .spin {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Plan cards ── */
+    .plans-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 800px) { .plans-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .plan-card {
+      border: 2px solid var(--bdr); border-radius: 16px;
+      padding: 24px 20px; cursor: pointer; transition: all 0.2s;
+      background: rgba(255,255,255,0.02); position: relative; overflow: hidden;
+    }
+    .plan-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    .plan-card.selected { border-color: var(--plan-color); background: rgba(var(--plan-rgb), 0.06); }
+
+    .plan-badge {
+      display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 1px;
+      padding: 3px 8px; border-radius: 6px; margin-bottom: 12px;
+      background: rgba(var(--plan-rgb), 0.15); color: var(--plan-color);
+    }
+
+    .plan-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .plan-price { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+    .plan-period { font-size: 13px; color: var(--t2); margin-bottom: 16px; }
+    .plan-minutes { font-size: 12px; color: var(--t2); font-weight: 600; margin-bottom: 16px; }
+
+    .plan-feats { display: flex; flex-direction: column; gap: 8px; }
+    .plan-feat {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--t2);
+    }
+    .plan-feat.yes { color: var(--t1); }
+    .plan-feat svg { flex-shrink: 0; }
+
+    .plan-popular {
+      position: absolute; top: 12px; right: 12px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+      background: var(--grad); color: #fff; padding: 3px 8px; border-radius: 20px;
+    }
+
+    /* Selected check */
+    .plan-check {
+      position: absolute; top: 12px; right: 12px; display: none;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--plan-color); align-items: center; justify-content: center;
+    }
+    .plan-card.selected .plan-check { display: flex; }
+    .plan-card.selected .plan-popular { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-orb o1"></div>
+<div class="bg-orb o2"></div>
+<div class="bg-orb o3"></div>
+<div class="bg-grid"></div>
+
+<div class="shell">
+
+  <!-- ── Brand Panel ── -->
+  <div class="brand-panel">
+    <div class="brand-logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 7L16 12 23 17V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+        </svg>
+      </div>
+      <span class="brand-name">StudioFlow</span>
+    </div>
+
+    <div class="brand-tagline">
+      The <span>Professional</span><br/>Teaching Studio
+    </div>
+    <p class="brand-sub">Record lectures, sync your iPad whiteboard, go live on YouTube — all from one elegant desktop app.</p>
+
+    <div class="feat-list">
+      <div class="feat-item">
+        <div class="feat-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        Teaching & Storytelling modes
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        </div>
+        iPad whiteboard sync
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+        </div>
+        YouTube Live streaming
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        Export workbook as PDF
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Auth Panel ── -->
+  <div class="auth-panel">
+
+    <!-- ── VIEW: Login ── -->
+    <div class="view active" id="view-login">
+      <div class="view-title">Welcome back</div>
+      <div class="view-sub">Sign in to your StudioFlow account</div>
+      <div class="card">
+        <div class="msg" id="login-msg"></div>
+        <div class="field">
+          <label>Email address</label>
+          <input type="email" id="login-email" placeholder="you@school.edu" autocomplete="email"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/>
+        </div>
+        <div style="text-align:right; margin-bottom:20px; margin-top:-8px;">
+          <button class="btn-link" onclick="show('view-forgot')">Forgot password?</button>
+        </div>
+        <button class="btn-primary" id="btn-login" onclick="doLogin()">
+          <span class="spin" id="login-spin"></span>
+          <span id="login-lbl">Sign In</span>
+        </button>
+      </div>
+      <div class="auth-footer">
+        Don't have an account?
+        <button class="btn-link" onclick="show('view-register')">Create one free</button>
+      </div>
+    </div>
+
+    <!-- ── VIEW: Register ── -->
+    <div class="view" id="view-register">
+      <div class="view-title">Create your account</div>
+      <div class="view-sub">Start with a free plan — upgrade anytime</div>
+      <div class="card">
+        <div class="msg" id="reg-msg"></div>
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="reg-name" placeholder="Dr. Raman Singh" autocomplete="name"/>
+        </div>
+        <div class="field">
+          <label>Email address</label>
+          <input type="email" id="reg-email" placeholder="you@school.edu" autocomplete="email"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="reg-pass" placeholder="Min. 8 characters" autocomplete="new-password"/>
+        </div>
+        <button class="btn-primary" id="btn-reg" onclick="goToPlanSelect()">
+          <span>Continue to Plan Selection</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="auth-footer">
+        Already have an account?
+        <button class="btn-link" onclick="show('view-login')">Sign in</button>
+      </div>
+    </div>
+
+    <!-- ── VIEW: Plan Select ── -->
+    <div class="view" id="view-plans">
+      <div class="view-title">Choose your plan</div>
+      <div class="view-sub">Start free, upgrade when you need more. No credit card required for Free.</div>
+
+      <div class="msg" id="plans-msg"></div>
+
+      <div class="plans-grid" id="plans-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <button class="btn-ghost" style="flex:0 0 120px;" onclick="show('view-register')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <button class="btn-primary" id="btn-create" onclick="doRegister()">
+          <span class="spin" id="reg-spin"></span>
+          <span id="reg-lbl">Create Account</span>
+        </button>
+      </div>
+
+      <div class="auth-footer" style="margin-top:16px;">
+        Already have an account?
+        <button class="btn-link" onclick="show('view-login')">Sign in</button>
+      </div>
+    </div>
+
+    <!-- ── VIEW: Forgot Password ── -->
+    <div class="view" id="view-forgot">
+      <div class="view-title">Reset password</div>
+      <div class="view-sub">We'll send a reset link to your email</div>
+      <div class="card">
+        <div class="msg" id="forgot-msg"></div>
+        <div class="field">
+          <label>Email address</label>
+          <input type="email" id="forgot-email" placeholder="you@school.edu"/>
+        </div>
+        <button class="btn-primary" id="btn-forgot" onclick="doForgot()">
+          <span class="spin" id="forgot-spin"></span>
+          <span id="forgot-lbl">Send Reset Link</span>
+        </button>
+        <button class="btn-ghost" onclick="show('view-login')">Back to Sign In</button>
+      </div>
+    </div>
+
+  </div><!-- /auth-panel -->
+</div><!-- /shell -->
+
+<script>
+// ── Plan data (mirrored from plans.js) ──────────────────────────────────────
+const PLANS = [
+  {
+    id: 'basic', name: 'Basic', price: '₹0', period: 'forever',
+    color: '#6b7280', rgb: '107,114,128', badge: 'BASIC',
+    minutes: '1 hr / month',
+    feats: [
+      { label: 'Teaching mode', yes: true },
+      { label: 'iPad sync', yes: false },
+      { label: 'Storytelling mode', yes: false },
+      { label: 'Export PDF', yes: false },
+      { label: 'YouTube Live', yes: false },
+    ],
+  },
+  {
+    id: 'pro', name: 'Pro', price: '₹999', period: '/month',
+    color: '#6366f1', rgb: '99,102,241', badge: 'PRO', popular: true,
+    minutes: '10 hrs / month',
+    feats: [
+      { label: 'Teaching mode', yes: true },
+      { label: 'iPad sync', yes: true },
+      { label: 'Storytelling mode', yes: true },
+      { label: 'Export PDF', yes: true },
+      { label: 'YouTube Live', yes: false },
+    ],
+  },
+  {
+    id: 'max', name: 'Max', price: '₹2,499', period: '/month',
+    color: '#10b981', rgb: '16,185,129', badge: 'MAX',
+    minutes: '50 hrs / month',
+    feats: [
+      { label: 'Teaching mode', yes: true },
+      { label: 'iPad sync', yes: true },
+      { label: 'Storytelling mode', yes: true },
+      { label: 'Export PDF', yes: true },
+      { label: 'YouTube Live', yes: true },
+    ],
+  },
+  {
+    id: 'enterprise', name: 'Enterprise', price: 'Custom', period: '/year',
+    color: '#f59e0b', rgb: '245,158,11', badge: 'ENTERPRISE',
+    minutes: 'Unlimited',
+    feats: [
+      { label: 'Everything in Max', yes: true },
+      { label: 'Custom branding', yes: true },
+      { label: 'Priority support', yes: true },
+      { label: 'Team management', yes: true },
+      { label: '4K export', yes: true },
+    ],
+  },
+];
+
+let selectedPlan = 'basic';
+
+// ── Render plan cards ────────────────────────────────────────────────────────
+function renderPlans() {
+  const grid = document.getElementById('plans-grid');
+  grid.innerHTML = '';
+  PLANS.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'plan-card' + (p.id === selectedPlan ? ' selected' : '');
+    card.style.setProperty('--plan-color', p.color);
+    card.style.setProperty('--plan-rgb', p.rgb);
+    card.dataset.plan = p.id;
+
+    const featsHtml = p.feats.map(f => `
+      <div class="plan-feat ${f.yes ? 'yes' : ''}">
+        ${f.yes
+          ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`
+          : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+        }
+        ${f.label}
+      </div>`).join('');
+
+    card.innerHTML = `
+      ${p.popular ? '<div class="plan-popular">POPULAR</div>' : ''}
+      <div class="plan-check">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="plan-badge">${p.badge}</div>
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price">${p.price}</div>
+      <div class="plan-period">${p.period}</div>
+      <div class="plan-minutes">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ${p.minutes}
+      </div>
+      <div class="plan-feats">${featsHtml}</div>
+    `;
+    card.addEventListener('click', () => selectPlan(p.id));
+    grid.appendChild(card);
+  });
+}
+
+function selectPlan(id) {
+  selectedPlan = id;
+  document.querySelectorAll('.plan-card').forEach(c => {
+    const p = PLANS.find(x => x.id === c.dataset.plan);
+    c.classList.toggle('selected', c.dataset.plan === id);
+    c.style.setProperty('--plan-color', p.color);
+    c.style.setProperty('--plan-rgb', p.rgb);
+  });
+
+  // Enterprise → show contact message
+  const btn = document.getElementById('btn-create');
+  const lbl = document.getElementById('reg-lbl');
+  if (id === 'enterprise') {
+    lbl.textContent = 'Contact Sales';
+    btn.onclick = () => {
+      window.SF?.auth?.openExternal('mailto:sales@studioflow.app?subject=Enterprise%20Inquiry');
+    };
+  } else {
+    lbl.textContent = 'Create Account';
+    btn.onclick = doRegister;
+  }
+}
+
+// ── View switching ────────────────────────────────────────────────────────────
+function show(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  clearMsgs();
+}
+
+function clearMsgs() {
+  document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.textContent = ''; });
+}
+
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = `msg ${type} show`;
+  el.innerHTML = `
+    ${type === 'err' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' : ''}
+    ${type === 'ok' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    ${text}
+  `;
+}
+
+function setLoading(spinId, btnId, lblId, loading, label) {
+  document.getElementById(spinId).style.display = loading ? 'block' : 'none';
+  document.getElementById(btnId).disabled = loading;
+  if (label) document.getElementById(lblId).textContent = label;
+}
+
+// ── Auth actions ─────────────────────────────────────────────────────────────
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { showMsg('login-msg', 'err', 'Please fill in all fields'); return; }
+
+  setLoading('login-spin', 'btn-login', 'login-lbl', true, 'Signing in…');
+  const res = await window.SF.auth.signIn(email, pass);
+  setLoading('login-spin', 'btn-login', 'login-lbl', false, 'Sign In');
+
+  if (res.ok) {
+    showMsg('login-msg', 'ok', 'Welcome back! Loading app…');
+    setTimeout(() => window.SF.auth.launchApp(res), 800);
+  } else {
+    showMsg('login-msg', 'err', res.error || 'Sign in failed. Check your credentials.');
+  }
+}
+
+function goToPlanSelect() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+
+  if (!name)  { showMsg('reg-msg', 'err', 'Please enter your name'); return; }
+  if (!email) { showMsg('reg-msg', 'err', 'Please enter your email'); return; }
+  if (pass.length < 8) { showMsg('reg-msg', 'err', 'Password must be at least 8 characters'); return; }
+
+  renderPlans();
+  show('view-plans');
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+
+  setLoading('reg-spin', 'btn-create', 'reg-lbl', true, 'Creating account…');
+  const res = await window.SF.auth.signUp(email, pass, name, selectedPlan);
+  setLoading('reg-spin', 'btn-create', 'reg-lbl', false, 'Create Account');
+
+  if (res.ok) {
+    if (res.needsConfirmation) {
+      showMsg('login-msg', 'info', 'Check your email for a confirmation link, then sign in.');
+      show('view-login');
+    } else {
+      showMsg('plans-msg', 'ok', 'Account created! Loading app…');
+      setTimeout(() => window.SF.auth.launchApp(res), 800);
+    }
+  } else {
+    showMsg('plans-msg', 'err', res.error || 'Registration failed. Try again.');
+  }
+}
+
+async function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showMsg('forgot-msg', 'err', 'Please enter your email'); return; }
+
+  setLoading('forgot-spin', 'btn-forgot', 'forgot-lbl', true, 'Sending…');
+  const res = await window.SF.auth.resetPassword(email);
+  setLoading('forgot-spin', 'btn-forgot', 'forgot-lbl', false, 'Send Reset Link');
+
+  if (res.ok) {
+    showMsg('forgot-msg', 'ok', 'Reset link sent! Check your inbox.');
+  } else {
+    showMsg('forgot-msg', 'err', res.error || 'Failed to send reset email.');
+  }
+}
+
+// ── Enter key support ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.view.active');
+  if (!active) return;
+  if (active.id === 'view-login')    doLogin();
+  if (active.id === 'view-register') goToPlanSelect();
+  if (active.id === 'view-forgot')   doForgot();
+});
+
+// Init
+renderPlans();
+</script>
+</body>
+</html>

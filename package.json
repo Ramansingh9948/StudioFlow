@@ -7,10 +7,20 @@
     "start": "electron .",
     "dev": "electron . --enable-logging"
   },
-  "keywords": ["recording", "studio", "macos", "electron"],
+  "keywords": [
+    "recording",
+    "studio",
+    "macos",
+    "electron"
+  ],
   "author": "Personal",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.3.3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.2",
+    "qrcode": "^1.5.4",
+    "ws": "^8.21.0"
   }
 }

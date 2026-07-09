@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StudioFlow Sync Draw Board</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-panel: rgba(17, 24, 39, 0.7);
+      --bdr: rgba(255, 255, 255, 0.08);
+      --acc: #4f46e5;
+      --acc-hover: #6366f1;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Panel */
+    header {
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--bdr);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .title-group h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .title-group p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--bdr);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-badge.connected .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-badge.disconnected .status-dot {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    /* Drawing Board Canvas Area */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      background: #020617;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: transparent;
+    }
+
+    /* Floating Toolbar */
+    .toolbar {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--bdr);
+      border-radius: 20px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-right: 1px solid var(--bdr);
+      padding-right: 12px;
+    }
+
+    .tool-group:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+
+    .btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn.active {
+      background: var(--acc);
+      color: var(--text);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Colors */
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .color-btn.active {
+      border-color: #fff;
+      transform: scale(1.15);
+    }
+
+    /* Action buttons */
+    .action-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--bdr);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .clear-btn {
+      color: var(--error);
+      border-color: rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .clear-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Pressure debug overlay */
+    #debug {
+      position: absolute;
+      top: 70px;
+      left: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.4);
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>StudioFlow Drawing Sync</h1>
+      <p>Pencil sync is active. Draw to present.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <input type="file" id="remote-file-input" accept="application/pdf,image/*" style="display:none;"/>
+      <button class="action-btn" id="btn-remote-import" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; border-radius:10px; color:#fff; cursor:pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Import File
+      </button>
+      <button class="action-btn" id="btn-fullscreen" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; border-radius:10px; color:#fff; cursor:pointer;">
+        <svg id="fs-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        <span id="fs-label">Fullscreen</span>
+      </button>
+      <div id="status-badge" class="status-badge disconnected">
+        <div class="status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="canvas-container">
+    <div id="debug" style="z-index: 2;">Pressure: 0.00</div>
+    <div id="bg-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background-size:contain; background-position:center; background-repeat:no-repeat; pointer-events:none; z-index:0; opacity: 0.85; transition: background-image 0.2s ease;"></div>
+    <canvas id="board"></canvas>
+  </div>
+
+  <div class="toolbar">
+    <!-- Page Controls Group -->
+    <div class="tool-group">
+      <button class="btn" id="btn-page-prev" title="Previous Page" style="width: 34px; height: 34px; background: rgba(255,255,255,0.05); border: 1px solid var(--bdr); display:flex; align-items:center; justify-content:center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span id="lbl-page-info" style="color: var(--text-muted); font-weight: 700; font-size: 12px; min-width: 54px; text-align: center;">P. 1 / 1</span>
+      <button class="btn" id="btn-page-next" title="Next Page" style="width: 34px; height: 34px; background: rgba(255,255,255,0.05); border: 1px solid var(--bdr); display:flex; align-items:center; justify-content:center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="btn" id="btn-page-add" title="Add Page" style="width: 34px; height: 34px; background: var(--acc); color: #fff; border: none; margin-left: 2px; display:flex; align-items:center; justify-content:center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="tool-group">
+      <button class="btn active" id="tool-pen" title="Pen" style="display:flex;align-items:center;justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+      <button class="btn" id="tool-eraser" title="Eraser" style="display:flex;align-items:center;justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16l10-10 7 7-1.5 1.5"/><path d="M6.5 17.5l5-5"/></svg>
+      </button>
+      <button class="btn" id="tool-palm" title="Palm Rejection (Pencil Only)" style="display:flex; align-items:center; justify-content:center; gap:2px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="tool-group" id="colors">
+      <button class="color-btn active" data-color="#ef4444" style="background: #ef4444;"></button>
+      <button class="color-btn" data-color="#3b82f6" style="background: #3b82f6;"></button>
+      <button class="color-btn" data-color="#22c55e" style="background: #22c55e;"></button>
+      <button class="color-btn" data-color="#a855f7" style="background: #a855f7;"></button>
+      <button class="color-btn" data-color="#f97316" style="background: #f97316;"></button>
+      <button class="color-btn" data-color="#ffffff" style="background: #ffffff;"></button>
+    </div>
+
+    <div class="tool-group">
+      <button class="action-btn clear-btn" id="btn-clear" style="display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let ws = null;
+    let currentTool = 'pen'; // 'pen' or 'eraser'
+    let currentColor = '#ef4444';
+    let currentSize = 4;
+    let lastX = 0;
+    let lastY = 0;
+    let pencilOnlyMode = false;
+    
+    // Workbook page management
+    let ipadPages = [null];
+    let currentIpadIndex = 0;
+
+    // Prevent zoom/pinch on iPad Safari
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+    // Connect to WebSocket Server
+    function connectWS() {
+      // [M1] Read the session token from the URL query string.
+      // The QR code encodes the full URL including ?token=..., so when the iPad
+      // opens the link it automatically includes the token in all connections.
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionToken = urlParams.get('token') || '';
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}?type=ipad&token=${sessionToken}`;
+      
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        const badge = document.getElementById('status-badge');
+        badge.className = 'status-badge connected';
+        document.getElementById('status-text').textContent = 'Sync Connected';
+        console.log('WS Connection established');
+        sendDimensions();
+      };
+
+      ws.onclose = () => {
+        const badge = document.getElementById('status-badge');
+        badge.className = 'status-badge disconnected';
+        document.getElementById('status-text').textContent = 'Disconnected';
+        setTimeout(connectWS, 2000); // Reconnect in 2s
+      };
+
+      ws.onerror = (err) => {
+        console.error('WS Error:', err);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'bg-sync') {
+            const container = document.querySelector('.canvas-container');
+            const overlay = document.getElementById('bg-overlay');
+            if (data.bgType === 'blackboard') {
+              container.style.backgroundColor = '#0f172a';
+              overlay.style.backgroundImage = 'none';
+            } else if (data.data) {
+              // [M2] Only accept proper image data URIs — reject javascript: and other URIs
+              if (typeof data.data === 'string' && data.data.startsWith('data:image/')) {
+                container.style.backgroundColor = '#020617';
+                overlay.style.backgroundImage = `url(${data.data})`;
+              } else {
+                console.warn('[Security] bg-sync data URI rejected (not a data:image/)');
+              }
+            } else {
+              container.style.backgroundColor = '#020617';
+              overlay.style.backgroundImage = 'none';
+            }
+          } else if (data.type === 'clear-canvas') {
+            drawGrid();
+          } else if (data.type === 'page-change') {
+            applyPageChange(data.toIndex, data.total, data.fromIndex, data.fromData);
+          }
+        } catch(e) {
+          console.error('Error handling sync message:', e);
+        }
+      };
+    }
+
+    function sendDimensions() {
+      sendWS({
+        type: 'dimensions',
+        width: canvas.width,
+        height: canvas.height
+      });
+    }
+
+    // Initialize Canvas Dimensions
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+      drawGrid();
+      sendDimensions();
+    }
+
+    // Optional background graph grid for guiding drawings
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+    }
+
+    // [L2] Cap page indices to prevent memory exhaustion from malicious messages
+    const MAX_PAGES = 200;
+    function applyPageChange(toIndex, totalPages, fromIndex, fromData) {
+      toIndex = Math.min(Math.max(0, parseInt(toIndex) || 0), MAX_PAGES - 1);
+      totalPages = Math.min(Math.max(1, parseInt(totalPages) || 1), MAX_PAGES);
+      if (fromIndex !== undefined && fromIndex !== null && fromIndex >= 0) {
+        ipadPages[fromIndex] = fromData;
+      }
+      
+      while (ipadPages.length < totalPages) {
+        ipadPages.push(null);
+      }
+      
+      currentIpadIndex = toIndex;
+      document.getElementById('lbl-page-info').textContent = `P. ${currentIpadIndex + 1} / ${ipadPages.length}`;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      
+      if (ipadPages[currentIpadIndex]) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = ipadPages[currentIpadIndex];
+      }
+    }
+
+    function handleIpadPageChange(newIndex) {
+      const currentData = canvas.toDataURL();
+      const oldIndex = currentIpadIndex;
+      
+      if (newIndex >= ipadPages.length) {
+        ipadPages.push(null);
+      }
+      
+      applyPageChange(newIndex, ipadPages.length, oldIndex, currentData);
+      
+      sendWS({
+        type: 'page-change',
+        fromIndex: oldIndex,
+        fromData: currentData,
+        toIndex: newIndex,
+        total: ipadPages.length
+      });
+    }
+
+    // Normalize coordinates (convert to 0-1 range)
+    function getNormalizedPos(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) / rect.width,
+        y: (clientY - rect.top) / rect.height
+      };
+    }
+
+    // Draw Event Handlers
+    function startDraw(e) {
+      if (pencilOnlyMode && e.pointerType !== 'pen') return;
+      isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      const pos = getNormalizedPos(e.clientX, e.clientY);
+      lastX = e.clientX - rect.left;
+      lastY = e.clientY - rect.top;
+      
+      sendWS({
+        type: 'draw-start',
+        x: pos.x,
+        y: pos.y,
+        tool: currentTool,
+        color: currentColor,
+        size: currentSize
+      });
+    }
+
+    function draw(e) {
+      if (pencilOnlyMode && e.pointerType !== 'pen') return;
+      if (!isDrawing) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const pos = getNormalizedPos(e.clientX, e.clientY);
+      
+      // Calculate pressure if available (Apple Pencil support)
+      let pressure = e.pressure || 0.5;
+      if (e.pointerType === 'touch' && pressure === 0) {
+        pressure = 0.5; // Touch fallback
+      }
+      
+      document.getElementById('debug').textContent = `Pressure: ${pressure.toFixed(2)}`;
+
+      // Local drawing feedback
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentTool === 'eraser' ? currentSize * 6 : currentSize * (pressure * 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.restore();
+
+      lastX = x;
+      lastY = y;
+
+      sendWS({
+        type: 'draw-move',
+        x: pos.x,
+        y: pos.y,
+        pressure: pressure
+      });
+    }
+
+    function stopDraw(e) {
+      if (pencilOnlyMode && e.pointerType !== 'pen') return;
+      if (!isDrawing) return;
+      isDrawing = false;
+      sendWS({ type: 'draw-end' });
+    }
+
+    // Send payload to StudioFlow over WS
+    function sendWS(payload) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(payload));
+      }
+    }
+
+    // Pointer Event Listeners
+    canvas.addEventListener('pointerdown', startDraw);
+    canvas.addEventListener('pointermove', draw);
+    canvas.addEventListener('pointerup', stopDraw);
+    canvas.addEventListener('pointercancel', stopDraw);
+
+    // Toolbar Event Listeners
+    document.getElementById('tool-pen').addEventListener('click', () => {
+      currentTool = 'pen';
+      document.getElementById('tool-pen').classList.add('active');
+      document.getElementById('tool-eraser').classList.remove('active');
+    });
+
+    document.getElementById('tool-eraser').addEventListener('click', () => {
+      currentTool = 'eraser';
+      document.getElementById('tool-eraser').classList.add('active');
+      document.getElementById('tool-pen').classList.remove('active');
+    });
+
+    // Palm Rejection (Pencil Only) Toggle
+    document.getElementById('tool-palm').addEventListener('click', () => {
+      pencilOnlyMode = !pencilOnlyMode;
+      document.getElementById('tool-palm').classList.toggle('active', pencilOnlyMode);
+      const statusText = document.getElementById('status-text');
+      if (pencilOnlyMode) {
+        statusText.textContent = 'Pencil Only Mode';
+      } else {
+        statusText.textContent = 'Sync Connected';
+      }
+    });
+
+    // Remote File Import Trigger
+    document.getElementById('btn-remote-import').addEventListener('click', () => {
+      document.getElementById('remote-file-input').click();
+    });
+
+    // Remote File Import Handler
+    document.getElementById('remote-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      const statusText = document.getElementById('status-text');
+      statusText.textContent = 'Uploading file...';
+
+      reader.onload = (event) => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        let fileType = '';
+        if (ext === 'pdf') fileType = 'pdf';
+        else if (['mp4', 'mov', 'webm'].includes(ext)) fileType = 'video';
+        else if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) fileType = 'image';
+
+        if (!fileType) {
+          alert('Unsupported file type. Please upload a PDF or Image.');
+          statusText.textContent = 'Sync Connected';
+          return;
+        }
+
+        sendWS({
+          type: 'remote-import',
+          name: file.name,
+          fileType: fileType,
+          data: event.target.result
+        });
+
+        statusText.textContent = 'File synced!';
+        setTimeout(() => {
+          statusText.textContent = 'Sync Connected';
+        }, 3000);
+      };
+
+      reader.onerror = () => {
+        alert('Failed to read file.');
+        statusText.textContent = 'Sync Connected';
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    // Color buttons
+    const colorButtons = document.querySelectorAll('.color-btn');
+    colorButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        colorButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentColor = btn.getAttribute('data-color');
+        
+        // Auto-switch back to pen if user selects a color
+        currentTool = 'pen';
+        document.getElementById('tool-pen').classList.add('active');
+        document.getElementById('tool-eraser').classList.remove('active');
+      });
+    });
+
+    // Clear Canvas
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      if (confirm('Clear entire drawing canvas?')) {
+        drawGrid();
+        sendWS({ type: 'clear-canvas' });
+      }
+    });
+
+    // Fullscreen Toggle
+    const fsBtn = document.getElementById('btn-fullscreen');
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        const docEl = document.documentElement;
+        const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+        
+        if (requestFS) {
+          requestFS.call(docEl)
+            .then(() => {
+              document.getElementById('fs-icon').innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>';
+              document.getElementById('fs-label').textContent = 'Exit Full';
+            })
+            .catch(err => {
+              console.warn('Fullscreen failed:', err);
+            });
+        } else {
+          alert('Fullscreen mode is not supported by your browser.');
+        }
+      } else {
+        const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        if (exitFS) {
+          exitFS.call(document);
+          document.getElementById('fs-icon').innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';
+          document.getElementById('fs-label').textContent = 'Fullscreen';
+        }
+      }
+    });
+
+    const handleFSChange = () => {
+      const isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      const icon = document.getElementById('fs-icon');
+      const label = document.getElementById('fs-label');
+      if (!isFS) {
+        icon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';
+        label.textContent = 'Fullscreen';
+      } else {
+        icon.innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>';
+        label.textContent = 'Exit Full';
+      }
+      setTimeout(resizeCanvas, 150);
+    };
+
+    document.addEventListener('fullscreenchange', handleFSChange);
+    document.addEventListener('webkitfullscreenchange', handleFSChange);
+    document.addEventListener('mozfullscreenchange', handleFSChange);
+    document.addEventListener('MSFullscreenChange', handleFSChange);
+
+    // Workbook Page Control Click Listeners
+    document.getElementById('btn-page-prev').addEventListener('click', () => {
+      if (currentIpadIndex > 0) {
+        handleIpadPageChange(currentIpadIndex - 1);
+      }
+    });
+
+    document.getElementById('btn-page-next').addEventListener('click', () => {
+      handleIpadPageChange(currentIpadIndex + 1);
+    });
+
+    document.getElementById('btn-page-add').addEventListener('click', () => {
+      handleIpadPageChange(ipadPages.length);
+    });
+
+    // Init
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    connectWS();
+  </script>
+</body>
+</html>
