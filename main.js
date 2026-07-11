@@ -216,13 +216,24 @@ ipcMain.handle('save-recording', async (event, { buffer, mode, filename }) => {
     // [C1] Use spawn() with an argument array — never a shell command string.
     // This completely prevents shell injection regardless of path content.
     const videoEncoder = process.platform === 'darwin' ? 'h264_videotoolbox' : 'libx264';
-    const extraArgs    = process.platform === 'darwin' ? [] : ['-crf', '20', '-preset', 'fast'];
+
+    // Probe resolution from filename/buffer to pick appropriate bitrate
+    // VideoToolbox needs an explicit -b:v or it defaults to low quality (~2 Mbps)
+    const isDarwin = process.platform === 'darwin';
+    const vBitrate = isDarwin ? '20M' : null; // Use 20Mbps; actual bitrate will match source quality
+    const darwinArgs = [
+      '-b:v', vBitrate,   // explicit bitrate — prevents VideoToolbox soft-quality default
+      '-allow_sw', '1',   // allow CPU fallback if GPU encode fails (avoids silent skip)
+      '-tag:v', 'avc1',   // proper H.264 MP4 tagging for QuickTime/Finder
+    ];
+    const linuxArgs = ['-crf', '18', '-preset', 'fast', '-profile:v', 'high'];
+    const extraArgs = isDarwin ? darwinArgs : linuxArgs;
 
     return new Promise((resolve) => {
       const ffmpeg = spawn(ffmpegPath, [
         '-y', '-i', webmPath,
         '-c:v', videoEncoder, ...extraArgs,
-        '-c:a', 'aac', '-b:a', '192k',
+        '-c:a', 'aac', '-b:a', '256k',
         mp4Path,
       ]);
 

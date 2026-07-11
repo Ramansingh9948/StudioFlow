@@ -2255,7 +2255,10 @@
         <div class="sgrd">
           <div class="ssect">
             <h3>Recording</h3>
-            <div class="sitem2"><label>Video Quality</label><select class="sselect" id="sq"><option value="high">High (1080p)</option><option value="medium" selected>Medium (720p)</option><option value="low">Low (480p)</option></select></div>
+            <div class="sitem2"><label>Video Quality (Bitrate Profile)</label><select class="sselect" id="sq"><option value="original2k">Original / 2K (1440p)</option><option value="high" selected>High (1080p)</option><option value="medium">Medium (720p)</option><option value="low">Low (480p)</option></select></div>
+            <div class="sitem2"><label>Webcam Capture Resolution</label><select class="sselect" id="webcam-res"><option value="1440">Original / 2K (1440p)</option><option value="1080">Full HD (1080p)</option><option value="720" selected>HD (720p)</option><option value="480">SD (480p)</option></select></div>
+            <div class="sitem2"><label>Tablet/Camera Capture Resolution</label><select class="sselect" id="tablet-res"><option value="1440">Original / 2K (1440p)</option><option value="1080" selected>Full HD (1080p)</option><option value="720">HD (720p)</option><option value="480">SD (480p)</option></select></div>
+            <div class="sitem2"><label>Audio Noise Suppression</label><label class="tog"><input type="checkbox" id="setting-noise-suppression" checked/><span class="ttrack"></span></label></div>
             <div class="sitem2"><label>Frame Rate</label><select class="sselect" id="sfps"><option value="60">60 fps</option><option value="30" selected>30 fps</option><option value="24">24 fps</option></select></div>
             <div class="sitem2"><label>Countdown</label><select class="sselect" id="scd"><option value="3" selected>3 seconds</option><option value="5">5 seconds</option><option value="0">None</option></select></div>
             <div class="sitem2"><label>Face Filter (Beauty Mode)</label><select class="sselect" id="sf-filter"><option value="none" selected>Normal</option><option value="brighten">Brighten (Gora Mode)</option><option value="smooth">Smooth Skin (Blemish Cover)</option><option value="glow">Studio Glow</option></select></div>
@@ -2271,26 +2274,41 @@
                 <label>Enable Multistreaming (Tee Mode)</label>
                 <label class="tog"><input type="checkbox" id="multistream-toggle"/><span class="ttrack"></span></label>
               </div>
-              <div id="multistream-destinations" style="display: none; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--bdr); border-radius: 8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label style="font-size:12px; font-weight:600;"><input type="checkbox" id="ms-dest-youtube" checked/> YouTube Live</label>
-                  <input type="password" class="sselect" id="ms-key-youtube" placeholder="Stream Key..." style="width:180px; padding:6px 10px; font-family:'JetBrains Mono',monospace;"/>
+              <div id="multistream-destinations" style="display: none; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--bdr); border-radius: 8px;">
+                <div style="display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--bdr); padding-bottom:8px;">
+                  <label style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; color:var(--t1);"><input type="checkbox" id="ms-dest-youtube" checked/> YouTube Live</label>
+                  <div style="display:flex; gap:6px; width:100%;">
+                    <input type="text" class="sselect" id="ms-url-youtube" value="rtmp://a.rtmp.youtube.com/live2/" placeholder="Server URL..." style="flex:1.2; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                    <input type="password" class="sselect" id="ms-key-youtube" placeholder="Stream Key..." style="flex:0.8; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                  </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label style="font-size:12px; font-weight:600;"><input type="checkbox" id="ms-dest-facebook"/> Facebook Live</label>
-                  <input type="password" class="sselect" id="ms-key-facebook" placeholder="Stream Key..." style="width:180px; padding:6px 10px; font-family:'JetBrains Mono',monospace;"/>
+                <div style="display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--bdr); padding-bottom:8px;">
+                  <label style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; color:var(--t1);"><input type="checkbox" id="ms-dest-facebook"/> Facebook Live</label>
+                  <div style="display:flex; gap:6px; width:100%;">
+                    <input type="text" class="sselect" id="ms-url-facebook" value="rtmps://live-api-s.facebook.com:443/rtmp/" placeholder="Server URL..." style="flex:1.2; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                    <input type="password" class="sselect" id="ms-key-facebook" placeholder="Stream Key..." style="flex:0.8; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                  </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label style="font-size:12px; font-weight:600;"><input type="checkbox" id="ms-dest-instagram"/> Instagram Live</label>
-                  <input type="password" class="sselect" id="ms-key-instagram" placeholder="Stream Key..." style="width:180px; padding:6px 10px; font-family:'JetBrains Mono',monospace;"/>
+                <div style="display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--bdr); padding-bottom:8px;">
+                  <label style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; color:var(--t1);"><input type="checkbox" id="ms-dest-instagram"/> Instagram Live</label>
+                  <div style="display:flex; gap:6px; width:100%;">
+                    <input type="text" class="sselect" id="ms-url-instagram" value="rtmps://live-upload.instagram.com:443/rtmp/" placeholder="Server URL..." style="flex:1.2; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                    <input type="password" class="sselect" id="ms-key-instagram" placeholder="Stream Key..." style="flex:0.8; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                  </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label style="font-size:12px; font-weight:600;"><input type="checkbox" id="ms-dest-linkedin"/> LinkedIn Live</label>
-                  <input type="password" class="sselect" id="ms-key-linkedin" placeholder="Stream Key..." style="width:180px; padding:6px 10px; font-family:'JetBrains Mono',monospace;"/>
+                <div style="display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--bdr); padding-bottom:8px;">
+                  <label style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; color:var(--t1);"><input type="checkbox" id="ms-dest-linkedin"/> LinkedIn Live</label>
+                  <div style="display:flex; gap:6px; width:100%;">
+                    <input type="text" class="sselect" id="ms-url-linkedin" value="rtmps://main.live.linkedin.com/rtmp/" placeholder="Server URL..." style="flex:1.2; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                    <input type="password" class="sselect" id="ms-key-linkedin" placeholder="Stream Key..." style="flex:0.8; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                  </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label style="font-size:12px; font-weight:600;"><input type="checkbox" id="ms-dest-twitch"/> Twitch</label>
-                  <input type="password" class="sselect" id="ms-key-twitch" placeholder="Stream Key..." style="width:180px; padding:6px 10px; font-family:'JetBrains Mono',monospace;"/>
+                <div style="display:flex; flex-direction:column; gap:6px; padding-bottom:2px;">
+                  <label style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; color:var(--t1);"><input type="checkbox" id="ms-dest-twitch"/> Twitch</label>
+                  <div style="display:flex; gap:6px; width:100%;">
+                    <input type="text" class="sselect" id="ms-url-twitch" value="rtmp://live.twitch.tv/app/" placeholder="Server URL..." style="flex:1.2; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                    <input type="password" class="sselect" id="ms-key-twitch" placeholder="Stream Key..." style="flex:0.8; font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 8px; min-width:0;"/>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2331,6 +2349,15 @@
                 <button class="btn btn-sm pri" onclick="uploadWatermark()" style="font-size: 11px;">Upload Logo</button>
                 <button class="btn btn-sm ghost" id="btn-clear-watermark" onclick="clearWatermark()" style="color:var(--err); display:none; font-size: 11px;">Clear</button>
               </div>
+            </div>
+            <div class="sitem2" id="watermark-pos-container">
+              <label>Logo Position</label>
+              <select class="sselect" id="watermark-pos">
+                <option value="top-left" selected>Top Left</option>
+                <option value="top-right">Top Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="bottom-right">Bottom Right</option>
+              </select>
             </div>
             <div id="watermark-preview-container" style="margin-top: 8px; display: none; background: rgba(255,255,255,0.02); border: 1px solid var(--bdr); border-radius: 8px; padding: 10px; text-align: center;">
               <img id="watermark-preview-img" style="max-height: 36px; max-width: 140px; object-fit: contain; vertical-align: middle;"/>
@@ -2694,7 +2721,7 @@
 const G = {
   mode:'teaching', rec:false, paused:false, widgetMode:false,
   secs:0, tRef:null, chapters:[],
-  q:'medium', fps:30, cd:3, camFilter:'none', docZoom:1.0,
+  q:'high', fps:30, cd:3, camFilter:'none', docZoom:1.0,
   ytKey:'', ytUrl:'rtmp://a.rtmp.youtube.com/live2/', ytAutoRecord:true, streaming:false,
   activeScene: 'pip'
 };
@@ -2709,7 +2736,7 @@ async function initAuthAndPlans() {
   if (info && info.user) {
     currentPlan = info.plan || 'free';
     currentUserEmail = info.user.email || '';
-    currentUserName = (info.profile && info.profile.full_name) || info.user.email.split('@')[0];
+    currentUserName = (info.profile && info.profile.full_name) || (info.user && info.user.email ? info.user.email.split('@')[0] : 'Creator');
   }
   updateHeaderPlanBadge();
   updateSettingsAccountSection();
@@ -2796,17 +2823,33 @@ function showUpgradeModal(featureName, featureDesc) {
 // ── Watermark Branding ──────────────────────────────────────────────────────────
 let watermarkImg = null;
 
+function getWatermarkCoords(w, h, wmWidth, wmHeight, pos) {
+  const marginX = 20;
+  const marginY = 14;
+  switch (pos) {
+    case 'top-right':
+      return { x: w - wmWidth - marginX, y: marginY };
+    case 'bottom-left':
+      return { x: marginX, y: h - wmHeight - marginY };
+    case 'bottom-right':
+      return { x: w - wmWidth - marginX, y: h - wmHeight - marginY };
+    case 'top-left':
+    default:
+      return { x: marginX, y: marginY };
+  }
+}
+
 async function uploadWatermark() {
   try {
-    const res = await window.SF.openFile({ filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }] });
-    if (res && res.path) {
-      const b64 = await window.SF.readFileB64(res.path);
-      const ext = res.path.split('.').pop().toLowerCase();
-      const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
-      const src = `data:${mime};base64,${b64}`;
+    const filePath = await window.SF.openFile({ filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }] });
+    if (filePath) {
+      const src = await window.SF.readFileB64(filePath);
+      if (!src) {
+        toast('Error', 'Failed to read image file');
+        return;
+      }
       
       watermarkImg = new Image();
-      watermarkImg.src = src;
       watermarkImg.onload = () => {
         localStorage.setItem('sf_watermark_src', src);
         $('watermark-preview-img').src = src;
@@ -2814,6 +2857,12 @@ async function uploadWatermark() {
         $('btn-clear-watermark').style.display = 'inline-block';
         toast('Success', 'Watermark logo uploaded!');
       };
+      watermarkImg.onerror = () => {
+        watermarkImg = null;
+        localStorage.removeItem('sf_watermark_src');
+        toast('Error', 'Invalid or corrupt image file uploaded.');
+      };
+      watermarkImg.src = src;
     }
   } catch (e) {
     toast('Error', 'Failed to upload watermark');
@@ -2833,12 +2882,17 @@ function loadStoredWatermark() {
   const src = localStorage.getItem('sf_watermark_src');
   if (src) {
     watermarkImg = new Image();
-    watermarkImg.src = src;
     watermarkImg.onload = () => {
       $('watermark-preview-img').src = src;
       $('watermark-preview-container').style.display = 'block';
       $('btn-clear-watermark').style.display = 'inline-block';
     };
+    watermarkImg.onerror = () => {
+      watermarkImg = null;
+      localStorage.removeItem('sf_watermark_src');
+      console.warn('Cleared corrupt watermark from LocalStorage.');
+    };
+    watermarkImg.src = src;
   }
 }
 
@@ -3041,20 +3095,13 @@ function getLiveStreamTargets() {
   const streamTargets = [];
   if (G.multistreamActive) {
     const msPlatforms = ['youtube', 'facebook', 'instagram', 'linkedin', 'twitch'];
-    const platformUrls = {
-      youtube: 'rtmp://a.rtmp.youtube.com/live2/',
-      facebook: 'rtmps://live-api-s.facebook.com:443/rtmp/',
-      instagram: 'rtmps://live-upload.instagram.com:443/rtmp/',
-      linkedin: 'rtmps://main.live.linkedin.com/rtmp/',
-      twitch: 'rtmp://live.twitch.tv/app/'
-    };
-    
     msPlatforms.forEach(p => {
       if ($(`ms-dest-${p}`).checked) {
+        const url = $(`ms-url-${p}`).value.trim();
         const key = $(`ms-key-${p}`).value.trim();
-        if (key) {
+        if (url && key) {
           streamTargets.push({
-            serverUrl: platformUrls[p],
+            serverUrl: url,
             streamKey: key
           });
         }
@@ -3176,13 +3223,51 @@ async function getEnhancedAudioTrack(stream) {
   compressor.attack.setValueAtTime(0.01, audioCtx.currentTime);
   compressor.release.setValueAtTime(0.15, audioCtx.currentTime);
 
+  const gateGain = audioCtx.createGain();
+  const analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+
   // Connect the full vocal processor chain
   source.connect(hpFilter);
   hpFilter.connect(lpFilter);
   lpFilter.connect(bassBoost);
   bassBoost.connect(presenceBoost);
   presenceBoost.connect(compressor);
-    compressor.connect(destination);
+  
+  compressor.connect(gateGain);
+  compressor.connect(analyser);
+  gateGain.connect(destination);
+
+  // Real-time Noise suppression (Noise Gate Expander) loop
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Float32Array(bufferLength);
+  
+  function checkNoiseGate() {
+    const isSuppressionOn = $('setting-noise-suppression') ? $('setting-noise-suppression').checked : true;
+    if (!isSuppressionOn) {
+      // Noise suppression bypassed: full volume
+      gateGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.05);
+      setTimeout(checkNoiseGate, 50);
+      return;
+    }
+
+    analyser.getFloatTimeDomainData(dataArray);
+    let sum = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      sum += dataArray[i] * dataArray[i];
+    }
+    const rms = Math.sqrt(sum / bufferLength);
+    const db = 20 * Math.log10(rms || 0.0001);
+    
+    const threshold = -48; // gate threshold in dB
+    if (db > threshold) {
+      gateGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.01); // Quick open
+    } else {
+      gateGain.gain.setTargetAtTime(0.01, audioCtx.currentTime, 0.15); // Smooth release
+    }
+    setTimeout(checkNoiseGate, 20);
+  }
+  checkNoiseGate();
 
   return destination.stream.getAudioTracks()[0];
 }
@@ -3246,14 +3331,18 @@ function drawContain(ctx, img, x, y, w, h) {
   ctx.drawImage(img, 0, 0, imgW, imgH, dx, dy, dw, dh);
 }
 
-// Prefer VP8 — hardware-accelerated on Apple Silicon via VideoToolbox.
-// VP9 is a pure software encoder and is the primary cause of CPU heat.
+// Prefer H.264 in webm if available for best quality/compatibility,
+// fallback to VP8 which is hardware-accelerated on Apple Silicon.
 function getMime(){
-  return ['video/webm;codecs=vp8,opus','video/webm;codecs=vp9,opus','video/webm']
-    .find(t=>MediaRecorder.isTypeSupported(t))||'video/webm';
+  return [
+    'video/webm;codecs=h264,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9,opus',
+    'video/webm'
+  ].find(t=>MediaRecorder.isTypeSupported(t))||'video/webm';
 }
-// Slightly lower bitrates — still excellent quality, lower power draw.
-function getBR(){ return {high:5e6,medium:3e6,low:1e6}[G.q]||3e6; }
+// Quality-matched bitrates — for 2K use 20Mbps, 1080p 12Mbps, 720p 6Mbps, 480p 2.5Mbps
+function getBR(){ return {original2k:20e6, high:12e6, medium:6e6, low:2.5e6}[G.q]||6e6; }
 
 async function doSave(chunks,mime,mode){
   const blob=new Blob(chunks,{type:mime});
@@ -3784,14 +3873,38 @@ async function pickSrc(cb){
     }
   });
 
-  // Add screen/window sources
+  // Add screen/window sources — filter out StudioFlow itself to prevent infinite mirror loop
   screenSources.forEach(src => {
+    const srcName = (src.name || '').toLowerCase();
+    if (srcName === 'studioflow' || srcName.includes('studioflow')) return; // skip self
     addSourceItem({ id: src.id, name: src.name, thumbnail: src.thumbnail }, false, false);
   });
 
   if (!grid.children.length) {
     grid.innerHTML = '<div style="color:var(--t3);padding:20px;text-align:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><br>No capture sources found. Check System Preferences → Privacy → Screen Recording.</div>';
   }
+}
+
+function getCanvasRenderedRect(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const canvasRatio = canvas.width / canvas.height;
+  const elementRatio = rect.width / rect.height;
+  
+  let width, height, left, top;
+  
+  if (elementRatio > canvasRatio) {
+    height = rect.height;
+    width = rect.height * canvasRatio;
+    left = rect.left + (rect.width - width) / 2;
+    top = rect.top;
+  } else {
+    width = rect.width;
+    height = rect.width / canvasRatio;
+    left = rect.left;
+    top = rect.top + (rect.height - height) / 2;
+  }
+  
+  return { left, top, width, height };
 }
 
 // ══════════════════════════════════════════════════════
@@ -3810,21 +3923,51 @@ const Teaching=(()=>{
   let cachedCX = 0, cachedCY = 0, cachedR = 0;
 
   const cvs=$('t-canvas');
-  const ctx=cvs.getContext('2d');
+  // alpha:false gives the browser permission to skip alpha compositing — measurably faster.
+  // willReadFrequently:false is correct here; we write-only (draw), never call getImageData in hot path.
+  const ctx=cvs.getContext('2d', { alpha: false, willReadFrequently: false });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high'; // crisp high-quality downscaling/upscaling
   const svid=document.createElement('video');
   svid.autoplay=true; svid.muted=true;
 
   function updateBubblePosCache() {
     const bub = $('bubble');
     if (!bub || !cvs) return;
-    const cr = cvs.getBoundingClientRect();
+    const cr = getCanvasRenderedRect(cvs);
     const br = bub.getBoundingClientRect();
     if (cr.width === 0 || cr.height === 0) return;
     const sx = cvs.width / cr.width;
     const sy = cvs.height / cr.height;
-    cachedCX = (br.left - cr.left + br.width / 2) * sx;
-    cachedCY = (br.top - cr.top + br.height / 2) * sy;
-    cachedR = (br.width / 2) * sx;
+    const r = (br.width / 2) * sx;
+    cachedR = r;
+    // Clamp to ensure the circle is always fully within canvas bounds
+    cachedCX = Math.max(r, Math.min(cvs.width - r,  (br.left - cr.left + br.width / 2) * sx));
+    cachedCY = Math.max(r, Math.min(cvs.height - r, (br.top  - cr.top  + br.height/ 2) * sy));
+  }
+
+  // Snap bubble HTML overlay to bottom-right of the actual rendered canvas area
+  // (not the grey letterbox margins of #t-preview)
+  function repositionBubbleToCanvas() {
+    const bub = $('bubble');
+    const wrap = $('t-preview');
+    if (!bub || !wrap || !cvs) return;
+    // Wait one frame so getBoundingClientRect is accurate after layout
+    requestAnimationFrame(() => {
+      const cr  = getCanvasRenderedRect(cvs);
+      const wr  = wrap.getBoundingClientRect();
+      if (cr.width === 0 || cr.height === 0) return;
+      const bw  = bub.offsetWidth;
+      const bh  = bub.offsetHeight;
+      const pad = 20;
+      const nl  = cr.left - wr.left + cr.width  - bw - pad;
+      const nt  = cr.top  - wr.top  + cr.height - bh - pad;
+      bub.style.left   = nl + 'px';
+      bub.style.top    = nt + 'px';
+      bub.style.right  = 'auto';
+      bub.style.bottom = 'auto';
+      updateBubblePosCache();
+    });
   }
 
   window.addEventListener('resize', updateBubblePosCache);
@@ -4230,10 +4373,21 @@ const Teaching=(()=>{
     });
     document.addEventListener('mousemove',e=>{
       if(!drag) return;
-      const wr=wrap.getBoundingClientRect();
+      const wr=getCanvasRenderedRect(cvs);
+      const wrapRect = wrap.getBoundingClientRect();
       const bw=bub.offsetWidth, bh=bub.offsetHeight;
-      const nl=Math.max(0,Math.min(bl+e.clientX-ox,wr.width-bw));
-      const nt=Math.max(0,Math.min(bt+e.clientY-oy,wr.height-bh));
+      
+      const requestedLeft = bl + (e.clientX - ox);
+      const requestedTop = bt + (e.clientY - oy);
+      
+      const minLeft = wr.left - wrapRect.left;
+      const maxLeft = wr.left + wr.width - wrapRect.left - bw;
+      const minTop = wr.top - wrapRect.top;
+      const maxTop = wr.top + wr.height - wrapRect.top - bh;
+      
+      const nl = Math.max(minLeft, Math.min(requestedLeft, maxLeft));
+      const nt = Math.max(minTop, Math.min(requestedTop, maxTop));
+      
       bub.style.left=nl+'px'; bub.style.top=nt+'px';
       bub.style.right='auto'; bub.style.bottom='auto';
       updateBubblePosCache();
@@ -4319,23 +4473,30 @@ const Teaching=(()=>{
     if(scrnStr) scrnStr.getTracks().forEach(t=>t.stop());
     try{
       if (isCamera) {
+        const tabletResVal = $('tablet-res') ? $('tablet-res').value : '1080';
+        const idealW = tabletResVal === '1440' ? 2560 : tabletResVal === '1080' ? 1920 : tabletResVal === '720' ? 1280 : 854;
+        const idealH = tabletResVal === '1440' ? 1440 : tabletResVal === '1080' ? 1080 : tabletResVal === '720' ? 720 : 480;
         scrnStr = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
             deviceId: { exact: srcId },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            width: { ideal: idealW },
+            height: { ideal: idealH }
           }
         });
       } else {
+        // Desktop screen capture — request native resolution, no artificial cap
+        const sqVal = G.q;
+        const maxW = sqVal === 'original2k' ? 2560 : sqVal === 'high' ? 1920 : sqVal === 'medium' ? 1280 : 854;
+        const maxH = sqVal === 'original2k' ? 1440 : sqVal === 'high' ? 1080 : sqVal === 'medium' ? 720 : 480;
         scrnStr = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
             mandatory: {
               chromeMediaSource: 'desktop',
               chromeMediaSourceId: srcId,
-              maxWidth: 1920,
-              maxHeight: 1080
+              maxWidth: maxW,
+              maxHeight: maxH
             }
           }
         });
@@ -4350,10 +4511,11 @@ const Teaching=(()=>{
         if (annEl) {
           annEl.width = cvs.width;
           annEl.height = cvs.height;
-          annEl.classList.remove('hidden'); // Show drawing layer in Teaching mode
+          annEl.classList.remove('hidden');
         }
         
-        updateBubblePosCache();
+        // Snap bubble to canvas rendered area AFTER canvas size is known
+        repositionBubbleToCanvas();
         drawLoop();
       };
 
@@ -4382,9 +4544,14 @@ const Teaching=(()=>{
     if(!$('cam-tog').checked) return;
     const mic=$('mic-tog').checked;
     try{
+      const webcamResVal = $('webcam-res') ? $('webcam-res').value : '720';
+      const idealW = webcamResVal === '1440' ? 2560 : webcamResVal === '1080' ? 1920 : webcamResVal === '720' ? 1280 : 854;
+      const idealH = webcamResVal === '1440' ? 1440 : webcamResVal === '1080' ? 1080 : webcamResVal === '720' ? 720 : 480;
       camStr=await navigator.mediaDevices.getUserMedia({
         video: {
-          backgroundBlur: { ideal: true }
+          backgroundBlur: { ideal: true },
+          width: { ideal: idealW },
+          height: { ideal: idealH }
         },
         audio: mic
       });
@@ -4546,13 +4713,15 @@ const Teaching=(()=>{
       }
 
       // Draw Custom Branding Watermark
-      if (watermarkImg && watermarkImg.complete) {
+      if (watermarkImg && watermarkImg.complete && watermarkImg.naturalWidth > 0) {
         const targetHeight = 32;
         const scale = targetHeight / watermarkImg.height;
         const targetWidth = watermarkImg.width * scale;
         ctx.save();
         ctx.globalAlpha = 0.75;
-        ctx.drawImage(watermarkImg, 20, 14, targetWidth, targetHeight);
+        const pos = $('watermark-pos') ? $('watermark-pos').value : 'top-left';
+        const coords = getWatermarkCoords(cvs.width, cvs.height, targetWidth, targetHeight, pos);
+        ctx.drawImage(watermarkImg, coords.x, coords.y, targetWidth, targetHeight);
         ctx.restore();
       }
 
@@ -4729,7 +4898,16 @@ const Teaching=(()=>{
     aniF = null;
   }
 
-  return {start,stop,activate,deactivate,gotSrc,forceBgSync};
+  return {
+    start,
+    stop,
+    activate,
+    deactivate,
+    gotSrc,
+    forceBgSync,
+    restartCam: async () => { if (camStr) { stopCam(); await startCam(); } },
+    restartScreen: async () => { if (selSrc) await startScreen(selSrc); }
+  };
 })();
 
 // ══════════════════════════════════════════════════════
@@ -4749,7 +4927,16 @@ const Story=(()=>{
 
   async function startCam(){
     try{
-      camStr=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+      const webcamResVal = $('webcam-res') ? $('webcam-res').value : '720';
+      const idealW = webcamResVal === '1440' ? 2560 : webcamResVal === '1080' ? 1920 : webcamResVal === '720' ? 1280 : 854;
+      const idealH = webcamResVal === '1440' ? 1440 : webcamResVal === '1080' ? 1080 : webcamResVal === '720' ? 720 : 480;
+      camStr=await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: idealW },
+          height: { ideal: idealH }
+        },
+        audio: true
+      });
       $('st-vid').srcObject=camStr; $('st-vid').play();
     }catch(e){ toast('Warning',`Camera: ${e.message}`); }
   }
@@ -4951,13 +5138,15 @@ const Story=(()=>{
       }
 
       // Draw Custom Branding Watermark (mapped to storyCvs dimensions: 1280x720)
-      if (watermarkImg && watermarkImg.complete) {
+      if (watermarkImg && watermarkImg.complete && watermarkImg.naturalWidth > 0) {
         const targetHeight = 32;
         const scale = targetHeight / watermarkImg.height;
         const targetWidth = watermarkImg.width * scale;
         storyCtx.save();
         storyCtx.globalAlpha = 0.75;
-        storyCtx.drawImage(watermarkImg, 20, 14, targetWidth, targetHeight);
+        const pos = $('watermark-pos') ? $('watermark-pos').value : 'top-left';
+        const coords = getWatermarkCoords(1280, 720, targetWidth, targetHeight, pos);
+        storyCtx.drawImage(watermarkImg, coords.x, coords.y, targetWidth, targetHeight);
         storyCtx.restore();
       }
 
@@ -5328,7 +5517,13 @@ const Story=(()=>{
     $('s-mus').classList.add('on'); toast('Music','Music loaded');
   }
 
-  return {activate,deactivate,start,stop};
+  return {
+    activate,
+    deactivate,
+    start,
+    stop,
+    restartCam: async () => { if (camStr) { stopCam(); await startCam(); } }
+  };
 })();
 
 // ══════════════════════════════════════════════════════
@@ -5397,8 +5592,50 @@ function loadLib(type = 'teaching') {
   try{const d=await window.SF.getDirs(); $('save-path').textContent=d.root.replace('/Users/ramansingh','~');}catch(e){}
 })();
 
-$('sq').addEventListener('change',e=>G.q=e.target.value);
-$('sfps').addEventListener('change',e=>G.fps=+e.target.value);
+// Load persistent quality and fps settings from last session
+(()=>{
+  const savedQ = localStorage.getItem('sf_quality');
+  if (savedQ) { G.q = savedQ; $('sq').value = savedQ; }
+  const savedFps = localStorage.getItem('sf_fps');
+  if (savedFps) { G.fps = +savedFps; $('sfps').value = savedFps; }
+})();
+
+$('sq').addEventListener('change', e => {
+  G.q = e.target.value;
+  localStorage.setItem('sf_quality', e.target.value);
+});
+
+// Load persistent custom settings
+$('webcam-res').value = localStorage.getItem('sf_webcam_res') || '720';
+$('tablet-res').value = localStorage.getItem('sf_tablet_res') || '1080';
+$('setting-noise-suppression').checked = localStorage.getItem('sf_noise_suppression') !== 'false';
+$('watermark-pos').value = localStorage.getItem('sf_watermark_pos') || 'top-left';
+
+// Handle setting changes & stream restarts
+$('webcam-res').addEventListener('change', async e => {
+  localStorage.setItem('sf_webcam_res', e.target.value);
+  if (G.mode === 'teaching') {
+    await Teaching.restartCam();
+  } else if (G.mode === 'storytelling') {
+    await Story.restartCam();
+  }
+});
+$('tablet-res').addEventListener('change', async e => {
+  localStorage.setItem('sf_tablet_res', e.target.value);
+  if (G.mode === 'teaching') {
+    await Teaching.restartScreen();
+  }
+});
+$('setting-noise-suppression').addEventListener('change', e => {
+  localStorage.setItem('sf_noise_suppression', e.target.checked);
+});
+$('watermark-pos').addEventListener('change', e => {
+  localStorage.setItem('sf_watermark_pos', e.target.value);
+});
+$('sfps').addEventListener('change', e => {
+  G.fps = +e.target.value;
+  localStorage.setItem('sf_fps', e.target.value);
+});
 $('scd').addEventListener('change',e=>{
   G.cd=+e.target.value;
   $('t-cd-lbl').textContent=G.cd>0?`${G.cd}s`:'Off';
@@ -5453,12 +5690,25 @@ $('multistream-destinations').style.display = G.multistreamActive ? 'flex' : 'no
 $('single-stream-options').style.display = G.multistreamActive ? 'none' : 'flex';
 
 const msPlatforms = ['youtube', 'facebook', 'instagram', 'linkedin', 'twitch'];
+const defaultMsUrls = {
+  youtube: 'rtmp://a.rtmp.youtube.com/live2/',
+  facebook: 'rtmps://live-api-s.facebook.com:443/rtmp/',
+  instagram: 'rtmps://live-upload.instagram.com:443/rtmp/',
+  linkedin: 'rtmps://main.live.linkedin.com/rtmp/',
+  twitch: 'rtmp://live.twitch.tv/app/'
+};
+
 msPlatforms.forEach(p => {
   const savedKey = localStorage.getItem(`sf_ms_key_${p}`) || '';
   $(`ms-key-${p}`).value = savedKey;
-  
   $(`ms-key-${p}`).addEventListener('input', e => {
     localStorage.setItem(`sf_ms_key_${p}`, e.target.value);
+  });
+  
+  const savedUrl = localStorage.getItem(`sf_ms_url_${p}`) || defaultMsUrls[p];
+  $(`ms-url-${p}`).value = savedUrl;
+  $(`ms-url-${p}`).addEventListener('input', e => {
+    localStorage.setItem(`sf_ms_url_${p}`, e.target.value);
   });
   
   // YouTube active by default
