@@ -18,7 +18,7 @@ const { startServer, stopServer } = require('./server');
 const QRCode = require('qrcode');
 
 // ── Auth & Plan system ─────────────────────────────────────────────
-const authClient = require('./auth/supabase');
+const authClient = require('./auth/mongodb');
 const { isAllowed, getPlanInfo, getMonthlyMinutes, getRemainingMinutes, formatRemainingTime, getAllPlans } = require('./auth/plans');
 const { PRICING_URL } = require('./auth/config');
 

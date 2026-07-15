@@ -12,8 +12,7 @@
  */
 
 module.exports = {
-  SUPABASE_URL: 'https://itsmzngulkgvlblbkpsd.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable__5S1Bu-oVDJsY0XktL3KZg_WdXvyF6f',
+  MONGODB_URI: 'mongodb://localhost:27017/studioflow',
 
   // App settings
   APP_NAME: 'StudioFlow',

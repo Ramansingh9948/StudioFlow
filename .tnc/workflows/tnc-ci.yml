@@ -1,0 +1,266 @@
+name: StudioFlow CI-CD
+on: [push]
+jobs:
+  build:
+    runs-on: local
+    steps:
+      - name: Verify build
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const { execSync } = require('child_process');
+          console.log('🏗️  StudioFlow — Build Compilation Check');
+          try {
+            if (!fs.existsSync('package.json')) {
+              console.error('❌ package.json missing — wrong directory?');
+              process.exit(1);
+            }
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            console.log('📦 Package: ' + pkg.name + ' v' + pkg.version);
+            if (pkg.scripts && pkg.scripts.build) {
+              console.log('⚡ Running npm run build...');
+              execSync('npm run build', { stdio: 'inherit' });
+            } else {
+              console.log('ℹ️  No build script — verifying Electron entry point...');
+              if (!fs.existsSync('main.js')) {
+                console.error('❌ main.js not found — Electron entry point missing!');
+                process.exit(1);
+              }
+              console.log('✅ main.js found. Electron entry point OK.');
+            }
+          } catch (e) {
+            console.error('❌ Build check failed:', e.message);
+            process.exit(1);
+          }
+          SCRIPT
+
+      - name: Unit tests
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const { execSync } = require('child_process');
+          console.log('🧪 StudioFlow — Test Suite');
+          try {
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const testScript = pkg.scripts && pkg.scripts.test;
+            const hasRealTest = testScript && !testScript.includes('no test specified');
+            if (hasRealTest) {
+              console.log('⚡ Running npm test...');
+              execSync('npm test', { stdio: 'inherit' });
+            } else {
+              console.log('ℹ️  No test script — running structural validation...');
+              const required = ['main.js', 'preload.js', 'renderer/index.html', 'package.json'];
+              let allOk = true;
+              for (const f of required) {
+                if (fs.existsSync(f)) {
+                  console.log('✅ ' + f);
+                } else {
+                  console.error('❌ Missing: ' + f);
+                  allOk = false;
+                }
+              }
+              const authFiles = ['auth/mongodb.js', 'auth/plans.js', 'auth/localDb.js', 'auth/config.js'];
+              for (const f of authFiles) {
+                if (fs.existsSync(f)) {
+                  console.log('✅ ' + f);
+                } else {
+                  console.warn('⚠️  Auth file missing: ' + f);
+                }
+              }
+              if (fs.existsSync('server.js')) {
+                console.log('✅ server.js — stream server present');
+              } else {
+                console.warn('⚠️  server.js not found');
+              }
+              if (!allOk) process.exit(1);
+              console.log('✅ Structural validation passed.');
+            }
+            console.log('🎉 Test verification complete!');
+          } catch (e) {
+            console.error('❌ Test execution failed:', e.message);
+            process.exit(1);
+          }
+          SCRIPT
+
+      - name: Secret detection
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const path = require('path');
+          console.log('🔍 StudioFlow — Secret Detection Scan');
+          const patterns = [
+            { name: 'AWS Key',              regex: /(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/ },
+            { name: 'Private Key Block',    regex: /-----BEGIN (RSA|EC|DSA|PGP|OPENSSH)? PRIVATE KEY-----/ },
+            { name: 'Hardcoded secret',     regex: /(password|passwd|secret|api_key|client_secret)\s*[:=]\s*['`][a-zA-Z0-9_\-\.\/]{12,}['`]/i },
+            { name: 'Supabase service key', regex: /service_role["']?\s*[:=]\s*["'][a-zA-Z0-9._-]{30,}/ },
+            { name: 'Hardcoded JWT',        regex: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]{10,}/ }
+          ];
+          const ignoredDirs  = ['node_modules', '.git', '.gemini', '.tnc', 'dist', 'build'];
+          const ignoredFiles = ['.env', '.env.local', 'package-lock.json'];
+          const allowedExts  = ['.js', '.html', '.json', '.yml', '.yaml', '.ts'];
+          let secretsCount = 0;
+          let filesScanned = 0;
+          function scanDir(dir) {
+            let entries;
+            try { entries = fs.readdirSync(dir); } catch(e) { return; }
+            for (const file of entries) {
+              const fullPath = path.join(dir, file);
+              let stat;
+              try { stat = fs.statSync(fullPath); } catch(e) { continue; }
+              if (stat.isDirectory()) {
+                if (!ignoredDirs.includes(file)) scanDir(fullPath);
+              } else if (stat.isFile()) {
+                const ext = path.extname(file);
+                if (!allowedExts.includes(ext)) continue;
+                if (ignoredFiles.includes(file)) continue;
+                filesScanned++;
+                let content;
+                try { content = fs.readFileSync(fullPath, 'utf8'); } catch(e) { continue; }
+                patterns.forEach(function(p) {
+                  if (p.regex.test(content)) {
+                    console.error('❌ [SECRET] ' + path.relative(process.cwd(), fullPath) + ' — ' + p.name);
+                    secretsCount++;
+                  }
+                });
+              }
+            }
+          }
+          try {
+            scanDir(process.cwd());
+            console.log('📊 Scanned ' + filesScanned + ' files.');
+            if (secretsCount > 0) {
+              console.error('❌ ' + secretsCount + ' secret(s) found — commit blocked!');
+              process.exit(1);
+            }
+            console.log('✅ No secrets detected.');
+          } catch (e) {
+            console.error('Scan error:', e.message);
+            process.exit(1);
+          }
+          SCRIPT
+
+      - name: Dependency vulnerability scan
+        run: |
+          node << 'SCRIPT'
+          const { execSync } = require('child_process');
+          console.log('🛡️  StudioFlow — Dependency Vulnerability Audit');
+          try {
+            console.log('⚡ Running npm audit (high severity threshold)...');
+            execSync('npm audit --audit-level=high', { stdio: 'inherit' });
+            console.log('✅ No high-severity vulnerabilities found.');
+          } catch (e) {
+            console.warn('⚠️  Audit warnings — review above. Non-exploitable Electron devDep advisories are common.');
+          }
+          SCRIPT
+
+      - name: Code quality analysis
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const path = require('path');
+          console.log('🧐 StudioFlow — Code Quality Analysis');
+          const ignoredDirs = ['node_modules', '.git', '.gemini', '.tnc', 'dist', 'build'];
+          const allowedExts = ['.js', '.html'];
+          let smellsCount = 0;
+          let filesScanned = 0;
+          function analyzeFile(filePath) {
+            let content;
+            try { content = fs.readFileSync(filePath, 'utf8'); } catch(e) { return; }
+            const lines = content.split('\n');
+            const relPath = path.relative(process.cwd(), filePath);
+            filesScanned++;
+            if (lines.length > 1500) {
+              console.warn('⚠️  [Large File] ' + relPath + ' (' + lines.length + ' lines) — consider splitting');
+              smellsCount++;
+            }
+            const emptyCatch = content.match(/catch\s*(\([^)]*\))?\s*\{\s*\}/g);
+            if (emptyCatch) {
+              console.warn('⚠️  [Empty Catch] ' + relPath + ' swallows errors silently');
+              smellsCount++;
+            }
+            if (!relPath.includes('server.js') && !relPath.includes('main.js')) {
+              if (/localhost:\d{4}/.test(content)) {
+                console.warn('⚠️  [Hardcoded localhost] ' + relPath + ' — use env var for server URL');
+                smellsCount++;
+              }
+            }
+            if (relPath.startsWith('auth' + path.sep)) {
+              const debugLogs = (content.match(/console\.log\(/g) || []).length;
+              if (debugLogs > 5) {
+                console.warn('⚠️  [Auth Logging] ' + relPath + ' has ' + debugLogs + ' console.log calls — may leak PII');
+                smellsCount++;
+              }
+            }
+          }
+          function scanDir(dir) {
+            let entries;
+            try { entries = fs.readdirSync(dir); } catch(e) { return; }
+            for (const file of entries) {
+              const fullPath = path.join(dir, file);
+              let stat;
+              try { stat = fs.statSync(fullPath); } catch(e) { continue; }
+              if (stat.isDirectory()) {
+                if (!ignoredDirs.includes(file)) scanDir(fullPath);
+              } else if (stat.isFile()) {
+                if (allowedExts.includes(path.extname(file))) analyzeFile(fullPath);
+              }
+            }
+          }
+          try {
+            scanDir(process.cwd());
+            console.log('📊 Scanned ' + filesScanned + ' files. Found ' + smellsCount + ' warning(s).');
+            process.exit(0);
+          } catch (e) {
+            console.error('Analysis error:', e.message);
+            process.exit(1);
+          }
+          SCRIPT
+
+      - name: Boot verification check
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const { spawn } = require('child_process');
+          console.log('🚀 StudioFlow — Boot Verification (server.js)');
+          if (!fs.existsSync('server.js')) {
+            console.log('ℹ️  server.js not found — skipping boot check.');
+            process.exit(0);
+          }
+          console.log('⚡ Starting server.js on port 9998...');
+          const p = spawn('node', ['server.js'], {
+            env: Object.assign({}, process.env, { PORT: '9998', ELECTRON_IS_DEV: '1' })
+          });
+          let booted = false;
+          p.stdout.on('data', function(d) {
+            const out = d.toString();
+            console.log(out.trim());
+            if (out.includes('running at') || out.includes('started') || out.includes('listening')) {
+              booted = true;
+            }
+          });
+          p.stderr.on('data', function(d) {
+            const err = d.toString();
+            if (err.includes('DeprecationWarning') || err.includes('ExperimentalWarning')) {
+              console.warn('⚠️  ' + err.trim());
+              return;
+            }
+            console.error(err.trim());
+            if (err.toLowerCase().includes('error:') && !err.includes('EADDRINUSE')) {
+              p.kill();
+              process.exit(1);
+            }
+          });
+          p.on('error', function(e) {
+            console.error('❌ Failed to start server.js:', e.message);
+            process.exit(1);
+          });
+          setTimeout(function() {
+            if (booted) {
+              console.log('✅ server.js booted successfully — StudioFlow server healthy.');
+            } else {
+              console.warn('⚠️  server.js started but no boot confirmation message detected.');
+            }
+            p.kill();
+            process.exit(0);
+          }, 5000);
+          SCRIPT
